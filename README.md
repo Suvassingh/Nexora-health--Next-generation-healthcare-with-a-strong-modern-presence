@@ -10,7 +10,7 @@ flutter pub get
 flutter run
 ```
 
-Attribution
+# Attribution
 
 The app logo is from [Francesco Architetto Rollandin](https://freesvg.org/medical-vector-symbol).
 
