@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
+import 'package:patient_app/utils/logging.dart';
 
 class LoadingOverlay {
   OverlayEntry? loadingOverlayEntry;
 
-  void createLoadingOverlay() {
+  void createLoadingOverlay( BuildContext context) {
     removeLoadingOverlay();
 
     assert(loadingOverlayEntry == null);
@@ -34,7 +36,8 @@ class LoadingOverlay {
 
     logger("Showing new overlay $loadingOverlayEntry", "Nexora Overlay");
 
-    Overlay.of(context, debugRequiredFor: widget).insert(loadingOverlayEntry!);
+    // Overlay.of(context, debugRequiredFor: widget).insert(loadingOverlayEntry!);
+    Overlay.of(context).insert(loadingOverlayEntry!);
   }
 
   void removeLoadingOverlay() {

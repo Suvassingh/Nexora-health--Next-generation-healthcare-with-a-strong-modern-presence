@@ -6,6 +6,7 @@ import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/controller/internet_status_controller.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/login_screen.dart';
+import 'package:patient_app/utils/logging.dart';
 import 'package:patient_app/widgets/connectivity_icon.dart';
 import 'package:patient_app/widgets/dropdown_inputfield.dart';
 import 'package:patient_app/widgets/image_button.dart';
