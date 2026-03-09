@@ -11,10 +11,11 @@ import 'package:patient_app/widgets/dropdown_inputfield.dart';
 import 'package:patient_app/widgets/image_button.dart';
 import 'package:patient_app/widgets/input_field.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
+import 'package:patient_app/widgets/loading_overlay.dart';
 import 'package:patient_app/widgets/login_signup_button.dart';
 
 class SignupScreen extends StatefulWidget {
-  SignupScreen({super.key});
+  const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -42,7 +43,10 @@ class _SignupScreenState extends State<SignupScreen>
 
   String? selectedGender;
 
+  bool loading = false;
+
   late TabController tabController;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +57,15 @@ class _SignupScreenState extends State<SignupScreen>
   void dispose() {
     tabController.dispose();
     super.dispose();
+  }
+
+
+  void sendSignUpData() {
+    logger("Sending sign up data", "Nexora Sign up");
+    loading = true;
+    LoadingOverlay.show(context, widget);
+
+    loading = false;
   }
 
   @override
