@@ -20,6 +20,8 @@ import 'package:patient_app/widgets/login_signup_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'home_screen.dart';
+
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -101,7 +103,7 @@ class _SignupScreenState extends State<SignupScreen>
         
       );
        if (result.user != null) {
-        Get.offAll(() => LoginScreen());
+        Get.offAll(() => HomeScreen());
       }
     } catch (e) {
       print(e.toString());
