@@ -3,7 +3,7 @@ import 'package:patient_app/app_constants.dart';
 
 class ConnectivityIndicator extends StatelessWidget {
   final IconData icon;
- const ConnectivityIndicator({super.key, required this.icon});
+  const ConnectivityIndicator({super.key, required this.icon});
 
   @override
   Widget build(BuildContext context) {

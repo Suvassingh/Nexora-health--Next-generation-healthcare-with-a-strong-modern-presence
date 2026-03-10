@@ -92,15 +92,21 @@ class _SignupScreenState extends State<SignupScreen>
       );
       GoogleSignInAccount account = await signIn.authenticate();
       String idToken = account.authentication.idToken ?? "";
-      final authorization = await account.authorizationClient
-          .authorizationForScopes(["email", "profile"])?? await account.authorizationClient.authorizeScopes(["email","profile"]);
+      final authorization =
+          await account.authorizationClient.authorizationForScopes([
+            "email",
+            "profile",
+          ]) ??
+          await account.authorizationClient.authorizeScopes([
+            "email",
+            "profile",
+          ]);
       final result = await supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
         accessToken: authorization.accessToken,
-        
       );
-       if (result.user != null) {
+      if (result.user != null) {
         Get.offAll(() => LoginScreen());
       }
     } catch (e) {
@@ -348,7 +354,6 @@ class _SignupScreenState extends State<SignupScreen>
                             text: "Google",
                             onPressed: () {
                               continueWithGoogle();
-                              
                             },
                           ),
                           const SizedBox(height: 30),

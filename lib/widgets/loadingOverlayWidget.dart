@@ -5,7 +5,7 @@ import 'package:patient_app/utils/logging.dart';
 class LoadingOverlay {
   OverlayEntry? loadingOverlayEntry;
 
-  void createLoadingOverlay( BuildContext context) {
+  void createLoadingOverlay(BuildContext context) {
     removeLoadingOverlay();
 
     assert(loadingOverlayEntry == null);

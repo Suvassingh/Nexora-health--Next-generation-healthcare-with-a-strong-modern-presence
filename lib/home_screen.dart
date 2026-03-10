@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
               text: "Logout",
               onPressed: () async {
                 await supabase.auth.signOut();
-               Get.offAll(()=>LoginScreen());
+                Get.offAll(() => LoginScreen());
               },
             ),
           ],
