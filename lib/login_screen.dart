@@ -52,9 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result.user != null) {
         Get.offAll(() => HomeScreen());
       }
-    } catch (e) {
-      logger(e.toString(), "Nexora Login");
-    } finally {
+    }
+    // catch (e) {
+    //   logger(e.toString(), "Nexora Login");
+    // }
+    finally {
       setState(() {
         loading = false;
       });

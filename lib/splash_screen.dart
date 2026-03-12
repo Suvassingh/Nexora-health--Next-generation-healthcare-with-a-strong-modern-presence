@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       } else {
         timer.cancel();
-        Get.offAll(() => LoginScreen());
+        Get.offAll(() => HomeScreen());
       }
     });
   }

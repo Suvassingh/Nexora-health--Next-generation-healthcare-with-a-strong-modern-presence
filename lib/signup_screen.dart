@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/controller/internet_status_controller.dart';
+import 'package:patient_app/home_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/login_screen.dart';
 import 'package:patient_app/utils/logging.dart';
@@ -18,8 +19,6 @@ import 'package:patient_app/widgets/loading_overlay.dart';
 import 'package:patient_app/widgets/login_signup_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
-import 'home_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -54,8 +53,49 @@ class _SignupScreenState extends State<SignupScreen>
 
   late TabController tabController;
   final supabase = Supabase.instance.client;
-
+  // Sign up with email and password
   signUp() async {
+    // validation for the required fields
+    if (nameController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Name is required",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
+    if (phoneController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Phone is required",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
+    if (ageController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Age is required",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
+    if (selectedGender == null) {
+      Get.snackbar(
+        "Error",
+        "Gender is required",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
+    if (addressController.text.trim().isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Address is required",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
     if (emailcontroller.text.trim().isEmpty) {
       Get.snackbar('Error', 'Email is required');
       logger('email:"${emailcontroller.text}"', "Nexora signup");
@@ -65,20 +105,72 @@ class _SignupScreenState extends State<SignupScreen>
       Get.snackbar('Error', 'Password must be at least 6 characters');
       return;
     }
+    if (passwordcontroller.text != confirmPasswordController.text) {
+      Get.snackbar(
+        "Error",
+        "Password do not match...",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
     // Also validate other fields if needed
     setState(() => loading = true);
     try {
+      // setp 1 user authinticate
       final result = await supabase.auth.signUp(
         email: emailcontroller.text.trim(),
         password: passwordcontroller.text,
       );
-      if (result.user != null) {
-        Get.offAll(() => LoginScreen());
+      if (result.user == null) {
+        Get.snackbar(
+          "Error",
+          "Sign up failed",
+          colorText: Colors.white,
+          backgroundColor: Colors.redAccent,
+        );
       }
+      // Step 2 :save the user profile
+      final userId = result.user!.id;
+      await supabase.from("user_profiles").upsert({
+        'id': userId,
+        'full_name': nameController.text,
+        'phone_number': _formatPhone(phoneController.text.trim()),
+        'role': 'patient',
+        'preferred_language': 'nepali',
+        'updated_at': DateTime.now().toIso8601String(),
+        'email':emailcontroller.text
+      }, onConflict: 'id');
+
+      // step 3 save patient data
+      await supabase.from('patients').upsert({
+        'user_id': userId,
+        'gender': _mapGender(selectedGender),
+        'municipality': addressController.text.trim(),
+        'date_of_birth': _ageToDateOfBirth(ageController.text.trim()),
+      }, onConflict: 'user_id');
+      Get.snackbar(
+        'सफल! / Success',
+        'Account created successfully!',
+        backgroundColor: Colors.green.shade100,
+        duration: const Duration(seconds: 2),
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      Get.offAll(() => LoginScreen());
+    } on AuthException catch (e) {
+      // Supabase auth-specific errors (cleaner messages)
+      Get.snackbar(
+        'Sign Up Failed',
+        _authErrorMessage(e.message),
+        backgroundColor: Colors.red.shade100,
+      );
     } catch (e) {
-      Get.snackbar('Sign Up Failed', e.toString());
+      Get.snackbar(
+        'Sign Up Failed',
+        e.toString(),
+        backgroundColor: Colors.redAccent,
+      );
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -107,12 +199,119 @@ class _SignupScreenState extends State<SignupScreen>
         idToken: idToken,
         accessToken: authorization.accessToken,
       );
-       if (result.user != null) {
-        Get.offAll(() => LoginScreen());
+      if (result.user == null) {
+        return;
+      }
+      final userId = result.user!.id;
+      final googleName =
+          result.user!.userMetadata?['full_name'] ??
+          result.user!.userMetadata?['name'] ??
+          "";
+      final googleAvatar = result.user!.userMetadata?['avatar_url'] ?? '';
+      final googleEmail = result.user!.email ?? '';
+
+      //   save the user_profile ( Google data  + an form data already filled)
+      await supabase.from('user_profiles').upsert({
+        'id': userId,
+        'full_name': nameController.text.trim().isNotEmpty
+            ? nameController.text.trim()
+            : googleName,
+        'phone_number': phoneController.text.trim().isNotEmpty
+            ? _formatPhone(phoneController.text.trim())
+            : null,
+        'role': 'patient',
+        'preferred_language': 'nepali',
+        'avatar_url': googleAvatar,
+        ''
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'id');
+
+      // save patients row
+      final patientData = <String, dynamic>{'user_id': userId};
+      if (selectedGender != null) {
+        patientData['gender'] = _mapGender(selectedGender);
+      }
+      if (ageController.text.trim().isNotEmpty) {
+        patientData['date_of_birth'] = _ageToDateOfBirth(
+          ageController.text.trim(),
+        );
+      }
+      if (addressController.text.trim().isNotEmpty) {
+        patientData['municipality'] = addressController.text.trim();
+      }
+      await supabase
+          .from('patients')
+          .upsert(patientData, onConflict: 'user_id');
+      final hasCompleteProfile =
+          nameController.text.trim().isNotEmpty &&
+          selectedGender != null &&
+          ageController.text.trim().isNotEmpty;
+
+      if (hasCompleteProfile) {
+        Get.offAll(() => HomeScreen());
+      } else {
+        // Profile saved but incomplete → go home anyway,
+        // show a banner to complete profile later
+        Get.offAll(() => HomeScreen());
+        Get.snackbar(
+          'प्रोफाइल अपूर्ण',
+          'Please complete your profile in settings.',
+          backgroundColor: Colors.orange.shade100,
+          duration: const Duration(seconds: 4),
+        );
       }
     } catch (e) {
-      logger(e.toString(), "Nexora signup", level: Level.info);
+      Get.snackbar(
+        'Google Sign-In Failed',
+        e.toString(),
+        backgroundColor: Colors.red.shade100,
+      );
+      logger(
+        e.toString(),
+        "SignupScreen.continueWithGoogle",
+        level: Level.info,
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
+  }
+
+  // ── HELPER: Convert Nepal phone to E.164 (+977XXXXXXXXXX) ───────────────
+  String _formatPhone(String phone) {
+    phone = phone.replaceAll(' ', '').replaceAll('-', '');
+    if (phone.startsWith('+977')) return phone;
+    if (phone.startsWith('977')) return '+$phone';
+    if (phone.startsWith('0')) return '+977${phone.substring(1)}';
+    return '+977$phone';
+  }
+
+  // ── HELPER: Map localized gender string to DB enum value ────────────────
+  String _mapGender(String? gender) {
+    if (gender == null) return 'other';
+    final lower = gender.toLowerCase();
+    if (lower.contains('male') || lower == 'पुरुष') return 'male';
+    if (lower.contains('female') || lower == 'महिला') return 'female';
+    return 'other';
+  }
+
+  // ── HELPER: Convert age (int) → approximate date_of_birth string ────────
+  String? _ageToDateOfBirth(String ageStr) {
+    final age = int.tryParse(ageStr);
+    if (age == null) return null;
+    final year = DateTime.now().year - age;
+    return '$year-01-01'; // Jan 1st of birth year (approximate)
+  }
+
+  // ── HELPER: Friendly auth error messages ────────────────────────────────
+  String _authErrorMessage(String message) {
+    if (message.contains('already registered') ||
+        message.contains('User already registered')) {
+      return 'This email is already registered. Please login instead.';
+    }
+    if (message.contains('invalid email')) {
+      return 'Please enter a valid email address.';
+    }
+    return message;
   }
 
   @override
@@ -124,6 +323,14 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   void dispose() {
     tabController.dispose();
+    emailcontroller.dispose();
+    passwordcontroller.dispose();
+    nameController.dispose();
+    phoneController.dispose();
+    ageController.dispose();
+    genderController.dispose();
+    addressController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -433,10 +640,11 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                         LoginSignupButton(
                           text: AppLocalizations.of(context)!.signup,
-                          onPressed: () {
+                          onPressed: (){
                             signUp();
                           },
                         ),
+                        const SizedBox(height: 30),
                       ],
                     ),
                   ),
@@ -444,6 +652,30 @@ class _SignupScreenState extends State<SignupScreen>
               ),
             ),
           ),
+          if (loading)
+            Container(
+              color: Colors.black.withOpacity(0.4),
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          color: AppConstants.primaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Creating account...',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
