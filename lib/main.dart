@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
+import 'package:patient_app/controller/app_setting.dart';
+import 'package:patient_app/controller/internet_status_controller.dart';
 import 'package:patient_app/splash_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
+  Get.put(ConnectivityController(),permanent:true);
   await dotenv.load(fileName: ".env");
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +21,7 @@ void main() async {
     url: dotenv.env['supabase_url']!,
     anonKey: dotenv.env['supabase_anonKey']!,
   );
-  runApp(PatientApp(languageCode: languageCode));
+  runApp(AppSettingsProvider(child: PatientApp(languageCode: languageCode)));
 }
 
 class PatientApp extends StatefulWidget {

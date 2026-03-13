@@ -21,5 +21,9 @@
   "confirmpassword":"Confirm Password",
   "next":"Next",
   "back":"Back",
-  "loading":"Loading"
+  "loading":"Loading",
+  "namaste":"Namaste",
+  "howareyoufeelingtoday":"How are you feeling today?",
+  "edit":"Edit"
+
 }

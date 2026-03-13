@@ -76,4 +76,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loading => 'Loading';
+
+  @override
+  String get namaste => 'Namaste';
+
+  @override
+  String get howareyoufeelingtoday => 'How are you feeling today?';
 }

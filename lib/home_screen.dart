@@ -17,15 +17,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
 
   final supabase = Supabase.instance.client;
-  final ConnectivityController controller = Get.put(ConnectivityController());
+  final ConnectivityController controller = Get.put(ConnectivityController(),permanent: true);
 
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
     const HomePage(),
-    const AppointmentScreen(),
+    const AppointmentsScreen(),
     const ChatScreen(),
-    const ProfileScreen(),
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.redAccent,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         items: const [

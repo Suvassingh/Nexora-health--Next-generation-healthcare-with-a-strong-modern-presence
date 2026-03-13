@@ -19,22 +19,22 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Future.delayed(const Duration(seconds: 30),(){
-    //   if(mounted){
-    //     Get.offAll(()=>const HomeScreen());
-    //   }
-    // });
     _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
       if (_percentage < 100) {
         setState(() {
           _percentage += 1;
         });
-        if (supabase.auth.currentSession == null) {
-          Get.offAll(() => HomeScreen());
-        }
+        // ❌ REMOVED: navigation from inside the increment block
       } else {
         timer.cancel();
-        Get.offAll(() => HomeScreen());
+        // Get.offAll(() => const HomeScreen());
+
+        // ✅ Navigate once here, with correct auth check
+        if (supabase.auth.currentSession == null) {
+          Get.offAll(() =>  LoginScreen());
+        } else {
+          Get.offAll(() =>  HomeScreen());
+        }
       }
     });
   }

@@ -21,6 +21,9 @@
   "confirmpassword":"पासवर्ड पुष्टि गर्नुहोस्",
   "next":"अर्को",
   "back":"फिर्ता",
-  "loading":"लोड हुँदै"
+  "loading":"लोड हुँदै",
+  "namaste":"नमस्ते",
+  "howareyoufeelingtoday":"आज तपाईंलाई कस्तो महसुस भइरहेको छ?",
+  "edit":"सम्पादन"
 
 }

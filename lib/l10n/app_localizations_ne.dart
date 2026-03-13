@@ -76,4 +76,10 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get loading => 'लोड हुँदै';
+
+  @override
+  String get namaste => 'नमस्ते';
+
+  @override
+  String get howareyoufeelingtoday => 'आज तपाईंलाई कस्तो महसुस भइरहेको छ?';
 }
