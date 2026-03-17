@@ -98,6 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
         address: _addressCtrl.text.trim(),
         bloodGroup: _selectedBloodGroup,
         conditions: List<String>.from(_conditions),
+        avatar: ''
       );
       await _service.saveProfile(updated);
       setState(() {

@@ -12,6 +12,7 @@ class PatientProfile {
   String address; // patients.address
   String bloodGroup; // patients.blood_group  (enum)
   List<String> conditions; // patients.conditions
+  String avatar;
 
   PatientProfile({
     required this.id,
@@ -24,6 +25,7 @@ class PatientProfile {
     required this.address,
     required this.bloodGroup,
     required this.conditions,
+    required this.avatar
   });
 
   /// Calculated age in years from dateOfBirth.
@@ -68,6 +70,8 @@ class PatientProfile {
       address: patient['address']?.toString() ?? '',
       bloodGroup: patient['blood_group']?.toString() ?? '',
       conditions: List<String>.from(patient['conditions'] ?? []),
+      avatar: patient['avatar'].toString()
+
     );
   }
 
