@@ -11,12 +11,12 @@ class Appt {
   final String doctorName;
   final String specialty;
   final String healthpostName;
-  final String? avatarUrl; // null when no valid URL exists
+  final String? avatarUrl; 
   final DateTime scheduledAt;
   final String status;
-  final String consultType; // 'video' | 'audio' | 'chat' | 'physical'
+  final String consultType; 
   final String? patientNotes;
-  final int? doctorId;
+final String? doctorId; 
 
   const Appt({
     required this.id,
@@ -65,7 +65,8 @@ class Appt {
       consultType: consultType,
       patientNotes:
           row['patient_notes']?.toString() ?? row['notes']?.toString(),
-      doctorId: int.tryParse(row['doctor_id']?.toString() ?? ''),
+doctorId:
+          row['doctor_user_id']?.toString() ?? row['doctor_id']?.toString(),
     );
   }
 

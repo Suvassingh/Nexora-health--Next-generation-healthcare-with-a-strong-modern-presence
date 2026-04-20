@@ -44,7 +44,7 @@ class ApiService {
             }
             return handler.next(options);
           },
-      onError: (DioException e, handler) async {
+          onError: (DioException e, handler) async {
             if (e.response?.statusCode == 401 &&
                 e.requestOptions.extra['retried'] != true) {
               try {
@@ -53,7 +53,7 @@ class ApiService {
                 if (newSession != null) {
                   e.requestOptions.headers['Authorization'] =
                       'Bearer ${newSession.accessToken}';
-                  e.requestOptions.extra['retried'] = true; // ← prevent loop
+                  e.requestOptions.extra['retried'] = true; 
                   final retry = await _dio!.fetch(e.requestOptions);
                   return handler.resolve(retry);
                 }
@@ -66,7 +66,6 @@ class ApiService {
     }
     return _dio!;
   }
-
 
   static Future<Map<String, dynamic>> bookAppointment({
     required int doctorTableId,
@@ -129,7 +128,8 @@ class ApiService {
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getUpcomingAppointmentsEnriched() async {
+  static Future<List<Map<String, dynamic>>>
+  getUpcomingAppointmentsEnriched() async {
     final rows = await getUpcomingAppointments();
     return _enrichAppointmentsWithDoctorProfiles(
       rows,
@@ -137,8 +137,7 @@ class ApiService {
     );
   }
 
-
-static Future<List<Map<String, dynamic>>>
+  static Future<List<Map<String, dynamic>>>
   _enrichAppointmentsWithDoctorProfiles(
     List<Map<String, dynamic>> rows, {
     required String debugLabel,
@@ -162,7 +161,7 @@ static Future<List<Map<String, dynamic>>>
     if (doctorIds.isEmpty) return rows;
 
     try {
-      // 1. Fetch doctor rows from Supabase 
+      // 1. Fetch doctor rows from Supabase
       final doctorRowsById = doctorTableIds.isEmpty
           ? <Map<String, dynamic>>[]
           : List<Map<String, dynamic>>.from(
@@ -248,6 +247,8 @@ static Future<List<Map<String, dynamic>>>
       }
 
       // 5. Build final lookup map
+
+      // Step 5 — replace the doctorLookup building block with this:
       final doctorLookup = <String, Map<String, dynamic>>{};
       for (final doctor in doctorList) {
         final doctorId = doctor['id']?.toString() ?? '';
@@ -257,7 +258,6 @@ static Future<List<Map<String, dynamic>>>
         final profile = profileLookup[doctorUserId] ?? const {};
         final apiName = apiDoctorNames[doctorId];
 
-        // Priority: user_profiles.full_name > FastAPI name > fallback
         final resolvedName = (profile['full_name']?.toString() ?? '').isNotEmpty
             ? profile['full_name']!.toString()
             : (apiName != null && apiName.isNotEmpty)
@@ -270,6 +270,7 @@ static Future<List<Map<String, dynamic>>>
           'specialty': doctor['specialty']?.toString() ?? '',
           'healthpost_name': doctor['healthpost_name']?.toString() ?? '',
           'avatar_url': profile['avatar_url']?.toString(),
+          'doctor_user_id': doctorUserId, // ← ADD THIS LINE
         };
         if (doctorUserId.isNotEmpty) {
           doctorLookup[doctorUserId] = doctorLookup[doctorId]!;
@@ -302,7 +303,6 @@ static Future<List<Map<String, dynamic>>>
       return rows;
     }
   }
-
 
   /// Get upcoming appointments (next 7 days)
   static Future<List<Map<String, dynamic>>> getUpcomingAppointments() async {
@@ -350,8 +350,6 @@ static Future<List<Map<String, dynamic>>>
     }
   }
 
-
-
   /// Fetch doctors by specialty and optional location filters
   static Future<List<Map<String, dynamic>>> fetchDoctors({
     required String specialty,
@@ -385,7 +383,9 @@ static Future<List<Map<String, dynamic>>>
     try {
       final profileRows = await supabase
           .from('user_profiles')
-          .select('id, full_name, avatar_url, phone, email, province, district, municipality')
+          .select(
+            'id, full_name, avatar_url, phone, email, province, district, municipality',
+          )
           .inFilter('id', userIds);
 
       final profileLookup = <String, Map<String, dynamic>>{
@@ -400,27 +400,27 @@ static Future<List<Map<String, dynamic>>>
         final existingProfile = rawProfiles is Map<String, dynamic>
             ? rawProfiles
             : rawProfiles is List && rawProfiles.isNotEmpty
-                ? Map<String, dynamic>.from(rawProfiles.first as Map)
-                : const <String, dynamic>{};
+            ? Map<String, dynamic>.from(rawProfiles.first as Map)
+            : const <String, dynamic>{};
         return {
           ...row,
           'full_name': profile['full_name']?.toString() ?? row['full_name'],
           'avatar_url': profile['avatar_url']?.toString() ?? row['avatar_url'],
-          'user_profiles': {
-            ...existingProfile,
-            ...profile,
-          },
+          'user_profiles': {...existingProfile, ...profile},
         };
       }).toList();
 
       if (kDebugMode) {
         final unresolved = enriched
             .where((row) {
-              final name = row['full_name']?.toString() ??
+              final name =
+                  row['full_name']?.toString() ??
                   ((row['user_profiles'] as Map<String, dynamic>?)?['full_name']
                           ?.toString() ??
                       '');
-              return name.isEmpty || name == 'Unknown Doctor' || name == 'डाक्टर';
+              return name.isEmpty ||
+                  name == 'Unknown Doctor' ||
+                  name == 'डाक्टर';
             })
             .map((row) => row['id']?.toString() ?? '')
             .toList();

@@ -1,0 +1,119 @@
+import 'package:flutter/material.dart';
+import 'package:patient_app/models/chat_preview.dart';
+
+
+class ChatTile extends StatelessWidget {
+  final ChatPreview preview;
+  final String currentUserId;
+  final VoidCallback onTap;
+
+  const ChatTile({
+    required this.preview,
+    required this.currentUserId,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final appt = preview.appt;
+    final hasConversation = preview.conversationId != null;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        onTap: onTap,
+        leading: CircleAvatar(
+          radius: 26,
+          backgroundColor: const Color(0xFF1565C0).withOpacity(0.12),
+          backgroundImage: appt.avatarUrl != null
+              ? NetworkImage(appt.avatarUrl!)
+              : null,
+          child: appt.avatarUrl == null
+              ? Text(
+                  appt.initials,
+                  style: const TextStyle(
+                    color: Color(0xFF1565C0),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                )
+              : null,
+        ),
+        title: Text(
+          'Dr. ${appt.doctorName}',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: Color(0xFF1A1A2E),
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Text(
+            preview.lastMessage ??
+                (hasConversation ? 'No messages yet' : 'Tap to start chatting'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: preview.lastMessage != null
+                  ? Colors.grey.shade700
+                  : Colors.grey.shade400,
+            ),
+          ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (preview.lastMessageAt != null)
+              Text(
+                _formatTime(preview.lastMessageAt!),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              ),
+            const SizedBox(height: 4),
+            if (!hasConversation)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1565C0).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'New',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF1565C0),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1)
+      return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.day}/${dt.month}';
+  }
+}
