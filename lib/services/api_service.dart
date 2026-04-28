@@ -438,7 +438,38 @@ class ApiService {
       return rows;
     }
   }
+/// Initiate an audio or video call
+  static Future<Map<String, dynamic>> initiateCall({
+    required String calleeId,
+    required String appointmentId,
+    required String callType, // 'audio' | 'video'
+  }) async {
+    try {
+      final res = await dio.post(
+        '/calls/initiate',
+        data: {
+          'callee_id': calleeId,
+          'appointment_id': appointmentId,
+          'call_type': callType,
+        },
+      );
+      return res.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
 
+  /// Update call status (accepted / declined / ended / missed)
+  static Future<void> updateCallStatus({
+    required String callId,
+    required String status,
+  }) async {
+    try {
+      await dio.patch('/calls/$callId/status', data: {'status': status});
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
   static String _handleError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {

@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:patient_app/provider/appointment_provider.dart';
+import 'package:patient_app/provider/home_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
+import 'package:patient_app/call_screen.dart';
 import 'package:patient_app/services/api_service.dart';
 import 'package:patient_app/app_constants.dart';
 import 'chat_screen.dart';
 import 'models/appointment_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+
 
 IconData consultTypeIcon(String type) {
   switch (type.toLowerCase()) {
@@ -52,30 +59,24 @@ Color consultTypeColor(String type) {
   }
 }
 
-class AppointmentsScreen extends StatefulWidget {
+class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
 
   @override
-  State<AppointmentsScreen> createState() => _AppointmentsScreenState();
+  ConsumerState<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen>
+class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  bool _loading = true;
   bool _cancelling = false;
-  String? _error;
-  List<Appt> _today = [];
-  List<Appt> _upcoming = [];
-  List<Appt> _pending = [];
-  List<Appt> _completed = [];
-  List<Appt> _cancelled = [];
+
+
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 5, vsync: this);
-    _loadAppointments();
   }
 
   @override
@@ -84,62 +85,34 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final rows = await ApiService.getMyAppointmentsEnriched();
-      final all = rows.map(Appt.fromApi).toList();
-      final now = DateTime.now();
-      final todayStart = DateTime(now.year, now.month, now.day);
-      final todayEnd = todayStart.add(const Duration(days: 1));
+  List<Appt> _filterList(List<Appt> all, String type) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
 
-      setState(() {
-        _today =
-            all
-                .where(
-                  (a) =>
-                      a.status == 'confirmed' &&
-                      a.scheduledAt.isAfter(todayStart) &&
-                      a.scheduledAt.isBefore(todayEnd),
-                )
-                .toList()
-              ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-        _upcoming =
-            all
-                .where(
-                  (a) =>
-                      a.status == 'confirmed' &&
-                      a.scheduledAt.isAfter(todayEnd),
-                )
-                .toList()
-              ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-        _pending = all.where((a) => a.status == 'pending').toList()
-          ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-        _completed = all.where((a) => a.status == 'completed').toList()
-          ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
-
-        _cancelled =
-            all
-                .where((a) => a.status == 'cancelled' || a.status == 'no_show')
-                .toList()
-              ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
-
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
-    }
+    return switch (type) {
+      'today' => all
+          .where((a) =>
+      a.status == 'confirmed' &&
+          a.scheduledAt.isAfter(todayStart) &&
+          a.scheduledAt.isBefore(todayEnd))
+          .toList()
+        ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt)),
+      'upcoming' => all
+          .where((a) =>
+      a.status == 'confirmed' && a.scheduledAt.isAfter(todayEnd))
+          .toList()
+        ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt)),
+      'pending' => all.where((a) => a.status == 'pending').toList()
+        ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt)),
+      'completed' => all.where((a) => a.status == 'completed').toList()
+        ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt)),
+      _ => all
+          .where((a) => a.status == 'cancelled' || a.status == 'no_show')
+          .toList()
+        ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt)),
+    };
   }
-
   Future<void> _cancelAppointment(Appt appt) async {
     final confirm = await _showCancelDialog(appt);
     if (confirm != true) return;
@@ -155,7 +128,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         margin: const EdgeInsets.all(12),
         duration: const Duration(seconds: 3),
       );
-      await _loadAppointments();
+      //  Invalidate BOTH providers so home + appointments refresh together
+      ref.invalidate(appointmentsProvider);
+      ref.invalidate(homeDataProvider);
     } catch (e) {
       Get.snackbar(
         'त्रुटि',
@@ -218,13 +193,65 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       ],
     ),
   );
-
-  void _handleJoin(Appt appt) {
+Future<void> _handleJoin(Appt appt) async {
     final type = appt.consultType.toLowerCase();
-    if (type == 'video') {
-      Get.to(() => VideoConsultScreen(appt: appt));
-    } else if (type == 'audio' || type == 'phone') {
-      Get.to(() => AudioConsultScreen(appt: appt));
+
+    if (type == 'video' || type == 'audio' || type == 'phone') {
+      final isVideo = type == 'video';
+
+      // Request permissions
+      final statuses = await [
+        Permission.microphone,
+        if (isVideo) Permission.camera,
+      ].request();
+
+      if (statuses.values.any((s) => !s.isGranted)) {
+        Get.snackbar(
+          'अनुमति आवश्यक',
+          isVideo
+              ? 'भिडियो कलका लागि क्यामेरा र माइक्रोफोन अनुमति चाहिन्छ।'
+              : 'अडियो कलका लागि माइक्रोफोन अनुमति चाहिन्छ।',
+          backgroundColor: const Color(0xFFFEF2F2),
+          colorText: const Color(0xFFEF4444),
+          borderRadius: 12,
+          margin: const EdgeInsets.all(12),
+        );
+        return;
+      }
+
+      // Validate doctorId is a UUID before calling
+      if (appt.doctorId == null || appt.doctorId!.length < 10) {
+        Get.snackbar('त्रुटि', 'डाक्टरको ID भेटिएन। पुन: लोड गर्नुहोस्।');
+        return;
+      }
+
+      try {
+        final result = await ApiService.initiateCall(
+          calleeId: appt.doctorId!,
+          appointmentId: appt.id,
+          callType: isVideo ? 'video' : 'audio',
+        );
+        final callId = result['call_id'] as String;
+
+        Get.to(
+          () => CallScreen(
+            callId: callId,
+            remoteUserId: appt.doctorId!,
+            remoteUserName: 'Dr. ${appt.doctorName}',
+            isVideo: isVideo,
+            isCaller: true,
+          ),
+        );
+      } catch (e) {
+        Get.snackbar(
+          'त्रुटि',
+          'कल सुरु गर्न सकिएन: $e',
+          backgroundColor: const Color(0xFFFEF2F2),
+          colorText: const Color(0xFFEF4444),
+          borderRadius: 12,
+          margin: const EdgeInsets.all(12),
+        );
+      }
     } else if (type == 'chat' || type == 'message') {
       Get.to(() => ChatScreen(appt: appt));
     } else {
@@ -242,30 +269,51 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final apptAsync = ref.watch(appointmentsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
-      appBar: _buildAppBar(),
-      body: _loading
-          ? _buildShimmer()
-          : _error != null
-          ? _buildError()
-          : TabBarView(
-              controller: _tabCtrl,
-              children: [
-                _buildTabContent(_today, 'today'),
-                _buildTabContent(_upcoming, 'upcoming'),
-                _buildTabContent(_pending, 'pending'),
-                _buildTabContent(_completed, 'completed'),
-                _buildTabContent(_cancelled, 'cancelled'),
-              ],
-            ),
+
+
+      appBar: apptAsync.when(
+        data: (all) => _buildAppBar(
+          today: _filterList(all, 'today'),
+          upcoming: _filterList(all, 'upcoming'),
+          pending: _filterList(all, 'pending'),
+        ),
+        loading: () => _buildAppBar(today: [], upcoming: [], pending: []),
+        error: (_, __) => _buildAppBar(today: [], upcoming: [], pending: []),
+
+      ),
+
+      body: apptAsync.when(
+        loading: () => _buildShimmer(),
+        error: (e, _) => _buildError(e.toString()),
+        data: (all) {
+          final today = _filterList(all, 'today');
+          final upcoming = _filterList(all, 'upcoming');
+          final pending = _filterList(all, 'pending');
+          final completed = _filterList(all, 'completed');
+          final cancelled = _filterList(all, 'cancelled');
+
+          return TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildTabContent(today, 'today'),
+              _buildTabContent(upcoming, 'upcoming'),
+              _buildTabContent(pending, 'pending'),
+              _buildTabContent(completed, 'completed'),
+              _buildTabContent(cancelled, 'cancelled'),
+            ],
+          );
+        },
+      ),
+
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.to(
-          () => const SimpleBookScreen(),
-        )?.then((_) => _loadAppointments()),
+        onPressed: () => Get.to(() => const SimpleBookScreen())
+            ?.then((_) => ref.invalidate(appointmentsProvider)),
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
-        elevation: 4,
         icon: const Icon(Icons.add_rounded),
         label: const Text(
           'नयाँ बुक',
@@ -275,65 +323,75 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar() => AppBar(
-    backgroundColor: AppConstants.primaryColor,
-    elevation: 0,
-    systemOverlayStyle: SystemUiOverlayStyle.light,
-    leading: Navigator.canPop(context)
-        ? IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back(),
-          )
-        : null,
-    title: const Text(
-      'मेरा अपोइन्टमेन्ट',
-      style: TextStyle(
-        fontSize: 17,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-    ),
-    actions: [
-      IconButton(
-        icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-        onPressed: _loadAppointments,
-      ),
-    ],
-    bottom: TabBar(
-      controller: _tabCtrl,
-      labelColor: Colors.white,
-      unselectedLabelColor: Colors.white60,
-      indicatorColor: Colors.white,
-      indicatorWeight: 3,
-      isScrollable: true,
-      tabAlignment: TabAlignment.start,
-      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-      unselectedLabelStyle: const TextStyle(fontSize: 13),
-      tabs: [
-        Tab(
-          child: _BadgeTab(
-            label: 'आज',
-            count: _today.length,
-            badgeColor: AppConstants.primaryColor,
-            showDot: _today.isNotEmpty,
+  PreferredSizeWidget _buildAppBar({
+    required List<Appt> today,
+    required List<Appt> upcoming,
+    required List<Appt> pending,
+  }) =>
+      AppBar(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
+        ),
+        backgroundColor: AppConstants.primaryColor,
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        )
+            : null,
+        title: const Text(
+          'मेरा अपोइन्टमेन्ट',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
-        Tab(
-          text: 'आउँदो${_upcoming.isNotEmpty ? " (${_upcoming.length})" : ""}',
-        ),
-        Tab(
-          child: _BadgeTab(
-            label: 'पर्खाइमा',
-            count: _pending.length,
-            badgeColor: const Color(0xFFF57F17),
-            showDot: _pending.isNotEmpty,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: () => ref.invalidate(appointmentsProvider),
           ),
+        ],
+        bottom: TabBar(
+          controller: _tabCtrl,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          labelStyle:
+          const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontSize: 13),
+          tabs: [
+            Tab(
+              child: _BadgeTab(
+                label: 'आज',
+                count: today.length,
+                badgeColor: AppConstants.primaryColor,
+                showDot: today.isNotEmpty,
+              ),
+            ),
+            Tab(
+              text:
+              'आउँदो${upcoming.isNotEmpty ? " (${upcoming.length})" : ""}',
+            ),
+            Tab(
+              child: _BadgeTab(
+                label: 'पर्खाइमा',
+                count: pending.length,
+                badgeColor: const Color(0xFFF57F17),
+                showDot: pending.isNotEmpty,
+              ),
+            ),
+            const Tab(text: 'सम्पन्न'),
+            const Tab(text: 'रद्द'),
+          ],
         ),
-        const Tab(text: 'सम्पन्न'),
-        const Tab(text: 'रद्द'),
-      ],
-    ),
-  );
+      );
 
   Widget _buildTabContent(List<Appt> list, String type) {
     if (list.isEmpty) return _buildEmpty(type);
@@ -342,8 +400,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         type == 'today' || type == 'upcoming' || type == 'pending';
     return RefreshIndicator(
       color: AppConstants.primaryColor,
-      onRefresh: _loadAppointments,
-      child: ListView.builder(
+      onRefresh: () async {
+        ref.invalidate(appointmentsProvider);
+      },      child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: list.length,
         itemBuilder: (_, i) => _ApptCard(
@@ -437,7 +496,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     ),
   );
 
-  Widget _buildError() => Center(
+  Widget _buildError(String message) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -459,13 +518,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            _error ?? '',
+            message,
             style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: _loadAppointments,
+            onPressed: () => ref.invalidate(appointmentsProvider),
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('पुन: प्रयास'),
             style: ElevatedButton.styleFrom(
@@ -1254,32 +1313,4 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class AudioConsultScreen extends StatelessWidget {
-  final Appt appt;
-  const AudioConsultScreen({super.key, required this.appt});
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text('Audio – डा. ${appt.doctorName}'),
-      backgroundColor: AppConstants.primaryColor,
-      foregroundColor: Colors.white,
-    ),
-    body: const Center(child: Text('Audio call screen placeholder')),
-  );
-}
-
-class VideoConsultScreen extends StatelessWidget {
-  final Appt appt;
-  const VideoConsultScreen({super.key, required this.appt});
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text('Video – डा. ${appt.doctorName}'),
-      backgroundColor: AppConstants.primaryColor,
-      foregroundColor: Colors.white,
-    ),
-    body: const Center(child: Text('Video call screen placeholder')),
-  );
-}

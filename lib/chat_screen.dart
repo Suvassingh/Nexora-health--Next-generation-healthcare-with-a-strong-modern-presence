@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:encrypt/encrypt.dart' as encrypt;
@@ -11,7 +11,6 @@ import 'package:patient_app/models/appointment_model.dart';
 import 'package:patient_app/services/encryption_service.dart';
 import 'package:patient_app/widgets/message_bubble.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 
 class ChatScreen extends StatefulWidget {
   final Appt appt;
@@ -49,12 +48,14 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _channel?.unsubscribe();
+    if (_channel != null) {
+      _supabase.removeChannel(_channel!);
+    }
     super.dispose();
   }
 
-
   Future<void> _initializeChat() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       await _ensureUserKeyPair();
@@ -72,7 +73,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   //  KEY PAIR MANAGEMENT
-
   Future<void> _ensureUserKeyPair() async {
     final profile = await _supabase
         .from('user_profiles')
@@ -80,15 +80,51 @@ class _ChatScreenState extends State<ChatScreen> {
         .eq('id', _currentUserId)
         .maybeSingle();
 
-    if (profile == null || profile['public_key'] == null) {
+    final storedPrivPem = await _secureStorage.read(
+      key: 'rsa_private_key_$_currentUserId',
+    );
+
+    // Check if stored keys are in old format (not valid JSON)
+    final privIsOld = storedPrivPem != null && !_isValidKeyFormat(storedPrivPem);
+    final pubIsOld = profile != null &&
+        profile['public_key'] != null &&
+        !_isValidKeyFormat(profile['public_key'] as String);
+
+    final needsRegen = storedPrivPem == null ||
+        profile == null ||
+        profile['public_key'] == null ||
+        privIsOld ||
+        pubIsOld;
+
+    if (needsRegen) {
+      debugPrint(' Regenerating keys — wiping old conversation too');
+
+      // Delete old conversation so it gets recreated with new keys
+      await _supabase
+          .from('conversations')
+          .delete()
+          .eq('patient_id', _currentUserId)
+          .eq('doctor_id', widget.appt.doctorId ?? '');
+
       await _generateAndSaveKeyPair();
     } else {
-      _currentUserPrivateKeyPem = await _secureStorage.read(
-        key: 'rsa_private_key_$_currentUserId',
-      );
-      if (_currentUserPrivateKeyPem == null) {
-        await _generateAndSaveKeyPair();
+      _currentUserPrivateKeyPem = storedPrivPem;
+    }
+  }
+
+  bool _isValidKeyFormat(String pem) {
+    try {
+      // Try base64 decode first
+      final bytes = base64Decode(pem);
+      final decoded = utf8.decode(bytes);
+      // New format is JSON starting with '{'
+      if (decoded.startsWith('{')) {
+        final map = jsonDecode(decoded) as Map;
+        return map.containsKey('n') && map.containsKey('e');
       }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -107,9 +143,8 @@ class _ChatScreenState extends State<ChatScreen> {
         .eq('id', _currentUserId);
 
     _currentUserPrivateKeyPem = privPem;
+    debugPrint(' New key pair saved');
   }
-
-  //  CONVERSATION MANAGEMENT
 
   Future<String> _getOrCreateConversation() async {
     // Look for existing conversation between this patient and doctor
@@ -209,7 +244,8 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _messages = data.map(_decodeMessage).toList());
     _scrollToBottom();
   }
-void _subscribeToMessages() {
+
+  void _subscribeToMessages() {
     // Use unique channel name per user+conversation to avoid conflicts
     final channelName = 'messages:${_conversationId!}:$_currentUserId';
 
@@ -242,7 +278,6 @@ void _subscribeToMessages() {
           debugPrint('Realtime status: $status, error: $error');
         });
   }
-
 
   Map<String, dynamic> _decodeMessage(Map<String, dynamic> msg) {
     if (msg['is_key_exchange'] == true) {
@@ -277,7 +312,7 @@ void _subscribeToMessages() {
   }
 
   //  SEND MESSAGE & MEDIA
-Future<void> _sendMessage() async {
+  Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty || _aesKey == null) return;
     _messageController.clear();
@@ -286,7 +321,7 @@ Future<void> _sendMessage() async {
 
     // Optimistically add to UI immediately (don't wait for realtime)
     final tempMsg = {
-      'id': null, 
+      'id': null,
       'conversation_id': _conversationId,
       'sender_id': _currentUserId,
       'encrypted_content': enc.content,
@@ -320,7 +355,6 @@ Future<void> _sendMessage() async {
     });
   }
 
-
   Future<void> _pickAndSendImage() async {
     final file = await _picker.pickImage(source: ImageSource.gallery);
     if (file == null) return;
@@ -332,7 +366,8 @@ Future<void> _sendMessage() async {
     if (file == null) return;
     await _uploadAndSendMedia(File(file.path), 'video');
   }
-Future<void> _uploadAndSendMedia(File file, String mediaType) async {
+
+  Future<void> _uploadAndSendMedia(File file, String mediaType) async {
     if (_sending) return;
     setState(() => _sending = true);
     try {
@@ -486,6 +521,3 @@ Future<void> _uploadAndSendMedia(File file, String mediaType) async {
     );
   }
 }
-
-
-

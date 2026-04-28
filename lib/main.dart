@@ -4,13 +4,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/controller/app_setting.dart';
 import 'package:patient_app/controller/internet_status_controller.dart';
+import 'package:patient_app/services/call_manager.dart';
 import 'package:patient_app/splash_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 void main() async {
-  Get.put(ConnectivityController(),permanent:true);
+  Get.put(ConnectivityController(), permanent: true);
   await dotenv.load(fileName: ".env");
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,11 @@ void main() async {
     url: dotenv.env['supabase_url']!,
     anonKey: dotenv.env['supabase_anonKey']!,
   );
-  runApp(AppSettingsProvider(child: PatientApp(languageCode: languageCode)));
+  runApp(
+    ProviderScope(
+      child: AppSettingsProvider(child: PatientApp(languageCode: languageCode)),
+    ),
+  );
 }
 
 class PatientApp extends StatefulWidget {
@@ -43,6 +48,13 @@ class PatientAppState extends State<PatientApp> {
   void initState() {
     super.initState();
     _locale = Locale(widget.languageCode);
+    CallManager.instance.init();
+  }
+
+  @override
+  void dispose() {
+    CallManager.instance.dispose();
+    super.dispose();
   }
 
   void changeLanguage(String code) async {

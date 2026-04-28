@@ -6,6 +6,7 @@ import 'package:patient_app/models/appointment_model.dart';
 import 'package:patient_app/profile_page.dart';
 import 'package:patient_app/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'chat_list_screen.dart';
 import 'controller/internet_status_controller.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,11 +23,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    const AppointmentsScreen(),
-    ChatScreen(appt: Appt(id: '', doctorName: '', specialty: '', healthpostName: '', scheduledAt: DateTime.now(), status: '', consultType: '')),
-    const ProfilePage(),
+  final List<Widget> _pages = const[
+     HomePage(),
+     AppointmentsScreen(),
+     ChatListScreen(),
+     ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -38,7 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body:IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.redAccent,
