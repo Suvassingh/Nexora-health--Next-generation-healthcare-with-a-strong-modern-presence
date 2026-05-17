@@ -33,7 +33,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  // ── Password strength checker ─────────────
+  //  Password strength checker 
   void _checkStrength(String val) {
     int score = 0;
     if (val.length >= 8) score++;
@@ -73,7 +73,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
   }
 
-  // ── Save ──────────────────────────────────
+  //  Save 
   Future<void> _changePassword() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -131,7 +131,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────
+  //  Build 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,49 +194,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  // // ── AppBar ────────────────────────────────
-  // Widget _buildAppBar() {
-  //   return Container(
-  //     color: const Color(0xFFB71C1C),
-  //     padding: EdgeInsets.only(
-  //       top: MediaQuery.of(context).padding.top + 12,
-  //       left: 16,
-  //       right: 16,
-  //       bottom: 14,
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         GestureDetector(
-  //           onTap: () => Get.to(() => ProfilePage()),
-  //           child: Container(
-  //             width: 34,
-  //             height: 34,
-  //             decoration: BoxDecoration(
-  //               color: Colors.white.withOpacity(0.2),
-  //               borderRadius: BorderRadius.circular(8),
-  //             ),
-  //             child: const Icon(
-  //               Icons.arrow_back_ios_new,
-  //               color: Colors.white,
-  //               size: 16,
-  //             ),
-  //           ),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         const Text(
-  //           'पासवर्ड परिवर्तन',
-  //           style: TextStyle(
-  //             color: Colors.white,
-  //             fontSize: 18,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  // //  AppBar 
 
-  // ── Info banner ───────────────────────────
+  //  Info banner 
   Widget _buildInfoBanner() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -265,7 +225,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  // ── Form card ─────────────────────────────
+  //  Form card 
   Widget _buildFormCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -283,7 +243,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Current password ──
+          //  Current password 
           _buildFieldLabel('हालको पासवर्ड', Icons.lock_outline),
           const SizedBox(height: 8),
           _buildPasswordField(
@@ -303,7 +263,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           const Divider(color: Color(0xFFF0F0F0)),
           const SizedBox(height: 20),
 
-          // ── New password ──
+          //  New password 
           _buildFieldLabel('नयाँ पासवर्ड', Icons.lock_reset_outlined),
           const SizedBox(height: 8),
           _buildPasswordField(
@@ -334,7 +294,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
           const SizedBox(height: 20),
 
-          // ── Confirm password ──
+          //  Confirm password 
           _buildFieldLabel(
             'पासवर्ड पुष्टि गर्नुहोस्',
             Icons.check_circle_outline,
@@ -531,7 +491,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
-  // ── Save button ───────────────────────────
+  //  Save button 
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,

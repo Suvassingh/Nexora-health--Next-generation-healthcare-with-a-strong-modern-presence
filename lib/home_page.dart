@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
+import 'package:patient_app/models/notification_model.dart';
 import 'package:patient_app/models/patients_model.dart';
+import 'package:patient_app/notification_screen.dart';
+import 'package:patient_app/provider/notification_provider.dart';
+import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/widgets/appointment_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:patient_app/app_constants.dart';
@@ -23,7 +29,21 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _supa = Supabase.instance.client;
   String _cancellingId = '';
 
+  StreamSubscription<AppNotification>? _notifSub;
+  @override
+  void initState() {
+    super.initState();
+    // Wire realtime notification stream → provider
+    _notifSub = NotificationService.instance.inAppStream.listen((n) {
+      ref.read(notificationProvider.notifier).addNew(n);
+    });
+  }
 
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
+  }
   Future<void> _cancelAppointment(String appointmentId,
       String doctorName,) async {
     final confirmed = await showDialog<bool>(
@@ -121,7 +141,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 
   @override
-  @override
   Widget build(BuildContext context) {
     final homeAsync = ref.watch(homeDataProvider);
 
@@ -175,51 +194,88 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() =>
-      AppBar(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
+PreferredSizeWidget _buildAppBar() => AppBar(
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
+    ),
+    backgroundColor: AppConstants.primaryColor,
+    elevation: 0,
+    systemOverlayStyle: SystemUiOverlayStyle.light,
+    title: const Row(
+      children: [
+        Image(
+          image: AssetImage('assets/images/gov_logo.webp'),
+          width: 40,
+          height: 40,
         ),
-        backgroundColor: AppConstants.primaryColor,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        title: const Row(
+        SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image(
-              image: AssetImage('assets/images/gov_logo.webp'),
-              width: 40,
-              height: 40,
+            Text(
+              AppConstants.nepalSarkar,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-            SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppConstants.nepalSarkar,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  AppConstants.govtOfNepal,
-                  style: TextStyle(fontSize: 10, color: Colors.white70),
-                ),
-              ],
+            Text(
+              AppConstants.govtOfNepal,
+              style: TextStyle(fontSize: 10, color: Colors.white70),
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-              onPressed: () {},
-            ),
-          ),
-        ],
-      );
+      ],
+    ),
+    //  NEW ACTIONS 
+    actions: [
+      Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Consumer(
+          builder: (context, ref, _) {
+            final unread = ref.watch(notificationProvider).unreadCount;
+            return GestureDetector(
+              onTap: () => Get.to(() => const NotificationScreen()),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                  if (unread > 0)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            unread > 99 ? '99+' : '$unread',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
   String _getFirstName(PatientProfile profile) {
     // ignore: dead_code
     final name = profile.fullName ?? '';
@@ -239,7 +295,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   style: const TextStyle(color: Color(0xFF1A1A1A)),
                   children: [
                     TextSpan(
-                      text: '$_greeting, $firstName ',  // ✅ use local var, not $_firstName
+                      text: '$_greeting, $firstName ',  
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -261,7 +317,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 radius: 22,
                 backgroundColor: AppConstants.primaryColor.withOpacity(0.12),
                 child: Text(
-                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U', // ✅ use local var
+                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U', 
                   style: TextStyle(
                     color: AppConstants.primaryColor,
                     fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,7 +15,6 @@ import 'package:patient_app/widgets/login_signup_button.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
-  // ignore: prefer_const_constructors_in_immutables
   LoginScreen({super.key});
 
   @override
@@ -23,44 +23,48 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final ConnectivityController controller = Get.put(ConnectivityController());
-
-  final emailcontroller = TextEditingController();
-
-  final passwordcontroller = TextEditingController();
-
-  bool loading = false;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   final supabase = Supabase.instance.client;
+  bool loading = false;
 
-  login() async {
-    if (emailcontroller.text.trim().isEmpty) {
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty) {
       Get.snackbar("Error", "Please enter your email");
       return;
     }
-    if (passwordcontroller.text.trim().isEmpty) {
+    if (password.isEmpty) {
       Get.snackbar("Error", "Please enter your password");
       return;
     }
-    setState(() {
-      loading = true;
-    });
+
+    setState(() => loading = true);
+
     try {
       final result = await supabase.auth.signInWithPassword(
-        email: emailcontroller.text.trim(),
-        password: passwordcontroller.text,
+        email: email,
+        password: password,
       );
-      if (result.user != null) {
-        print('=== FRESH TOKEN: ${result.session?.accessToken}');
 
+      if (result.user != null) {
         Get.offAll(() => HomeScreen());
       }
-    }
-    // catch (e) {
-    //   logger(e.toString(), "Nexora Login");
-    // }
-    finally {
-      setState(() {
-        loading = false;
-      });
+    } on AuthException catch (e) {
+      Get.snackbar("Login Failed", e.message);
+    } catch (e) {
+      Get.snackbar("Error", e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -99,105 +103,130 @@ class _LoginScreenState extends State<LoginScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Obx(() {
-              if (controller.connectionType.value == ConnectivityResult.none) {
+              final type = controller.connectionType.value;
+              if (type == ConnectivityResult.none) {
                 return ConnectivityIndicator(icon: Icons.signal_wifi_off);
-              } else if (controller.connectionType.value ==
-                  ConnectivityResult.wifi) {
+              } else if (type == ConnectivityResult.wifi) {
                 return ConnectivityIndicator(icon: Icons.wifi);
-              } else if (controller.connectionType.value ==
-                  ConnectivityResult.mobile) {
+              } else if (type == ConnectivityResult.mobile) {
                 return ConnectivityIndicator(icon: Icons.signal_cellular_4_bar);
-              } else {
-                return const SizedBox.shrink();
               }
+              return const SizedBox.shrink();
             }),
           ),
           IconButton(onPressed: () {}, icon: LanguageToggleButton()),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset('assets/images/login.json', width: 200, height: 200),
-            const SizedBox(height: 20),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    AppLocalizations.of(context)!.email,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  InputField(
-                    hintText: "ram@gmail.com",
-                    obscureText: false,
-                    controller: emailcontroller,
+                  Lottie.asset(
+                    'assets/images/login.json',
+                    width: 200,
+                    height: 200,
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    AppLocalizations.of(context)!.password,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 20,
                     ),
-                    textAlign: TextAlign.center,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.email,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        InputField(
+                          hintText: "ram@gmail.com",
+                          obscureText: false,
+                          controller: emailController,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          AppLocalizations.of(context)!.password,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        InputField(
+                          hintText: "xxxxxxxx",
+                          obscureText: true,
+                          controller: passwordController,
+                        ),
+                      ],
+                    ),
                   ),
-                  InputField(
-                    hintText: "xxxxxxxx",
-
-                    obscureText: true,
-                    controller: passwordcontroller,
+                  LoginSignupButton(
+                    text: AppLocalizations.of(context)!.login,
+                    onPressed: loading ? null : () => login(),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.donthaveanaccout,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.offAll(() => SignupScreen()),
+                        child: Text(
+                          AppLocalizations.of(context)!.signup,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppConstants.secondaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            LoginSignupButton(
-              text: AppLocalizations.of(context)!.login,
-              onPressed: () async {
-                await login();
-                // Now session will have the token
-                final session = Supabase.instance.client.auth.currentSession;
-                final user = Supabase.instance.client.auth.currentUser;
+          ),
 
-                print('=== SESSION: $session');
-                print('=== USER: $user');
-                print('=== TOKEN: ${session?.accessToken}');
-              },
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.donthaveanaccout,
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Get.offAll(() => SignupScreen());
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.signup,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppConstants.secondaryColor,
-                      fontWeight: FontWeight.bold,
+          // Loading overlay
+          if (loading)
+            Container(
+              color: Colors.black.withOpacity(0.4),
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          color: AppConstants.primaryColor,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Logging in...',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

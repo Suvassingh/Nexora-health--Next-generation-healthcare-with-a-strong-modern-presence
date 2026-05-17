@@ -52,7 +52,7 @@ class _SimpleBookScreenState extends State<SimpleBookScreen> {
   ConsultationType? _type;
 
   // Step 2 — doctor with location filter
-  String? _province, _district, _municipality; // ← _province added
+  String? _province, _district, _municipality; 
   List<DoctorInfo> _doctors = [];
   bool _loadingDoctors = false;
   DoctorInfo? _doctor;
@@ -381,7 +381,6 @@ Future<void> _fetchDoctors() async {
       onSelect: (t) => setState(() => _type = t),
     ),
     1 => _Step2Doctor(
-      // ← private _ prefix, matches class name below
       province: _province,
       district: _district,
       municipality: _municipality,

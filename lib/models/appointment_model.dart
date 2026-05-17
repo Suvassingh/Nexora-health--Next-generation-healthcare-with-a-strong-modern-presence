@@ -80,7 +80,6 @@ doctorId:
     // 2. Nested doctor object  → profile sub-object
     final doctor = row['doctor'];
     if (doctor is Map<String, dynamic>) {
-      // Try profile sub-object first
       final profile = doctor['profile'];
       if (profile is Map<String, dynamic>) {
         for (final key in ['full_name', 'name']) {
@@ -88,7 +87,6 @@ doctorId:
           if (v != null && v.isNotEmpty && v != 'null') return v;
         }
       }
-      // Try flat keys on doctor map
       for (final key in ['full_name', 'name', 'doctor_name']) {
         final v = doctor[key]?.toString().trim();
         if (v != null && v.isNotEmpty && v != 'null') return v;

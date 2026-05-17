@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class AppSettings extends ChangeNotifier {
-  // Singleton so the same instance is always used.
   static final AppSettings _instance = AppSettings._();
   factory AppSettings() => _instance;
   AppSettings._();
@@ -16,7 +15,6 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Convenience accessor — call AppSettings.of(context) anywhere in the tree.
   static AppSettings of(BuildContext context) {
     final provider = context
         .dependOnInheritedWidgetOfExactType<_AppSettingsInherited>();
@@ -30,7 +28,6 @@ class AppSettings extends ChangeNotifier {
   }
 }
 
-// ── InheritedWidget wrapper ───────────────────
 class _AppSettingsInherited extends InheritedNotifier<AppSettings> {
   const _AppSettingsInherited({
     required AppSettings settings,
@@ -42,7 +39,6 @@ class _AppSettingsInherited extends InheritedNotifier<AppSettings> {
       old.notifier != notifier;
 }
 
-/// Wrap your MaterialApp (or the root of your widget tree) with this.
 class AppSettingsProvider extends StatelessWidget {
   final Widget child;
   const AppSettingsProvider({super.key, required this.child});

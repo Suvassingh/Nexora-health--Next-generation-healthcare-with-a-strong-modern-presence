@@ -28,9 +28,7 @@ class EncryptionService {
     );
   }
 
-  //  SERIALISATION OF RSA KEYS TO PEM-LIKE STRINGS (for storage in SharedPreferences or secure storage)
-  // Store keys as JSON containing hex strings of all BigInt components.
-  // Simple, version-agnostic, no ASN1 dependency.
+
 
   static String publicKeyToPem(RSAPublicKey key) {
     final map = {

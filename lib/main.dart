@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:patient_app/controller/app_setting.dart';
 import 'package:patient_app/controller/internet_status_controller.dart';
 import 'package:patient_app/services/call_manager.dart';
+import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/splash_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,12 +17,16 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String languageCode = prefs.getString("language") ?? "en";
   await Supabase.initialize(
     url: dotenv.env['supabase_url']!,
     anonKey: dotenv.env['supabase_anonKey']!,
   );
+  await NotificationService.instance.initialize();
+
   runApp(
     ProviderScope(
       child: AppSettingsProvider(child: PatientApp(languageCode: languageCode)),

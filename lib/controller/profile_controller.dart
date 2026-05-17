@@ -1,9 +1,6 @@
 import 'package:patient_app/models/patients_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ─────────────────────────────────────────────
-// Service
-// ─────────────────────────────────────────────
 class PatientService {
   final _supabase = Supabase.instance.client;
 
