@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -32,7 +33,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       _calls = data.cast<Map<String, dynamic>>();
     } catch (e) {
       _error = e.toString();
-      if (mounted) Get.snackbar('Error', _error);
+if (mounted) Get.snackbar(AppLocalizations.of(context)!.error, _error);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -51,16 +52,17 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Call History')),
+     appBar: AppBar(title: Text(AppLocalizations.of(context)!.callHistory)),
       body: RefreshIndicator(
         onRefresh: _fetchHistory,
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _calls.isEmpty
             ? ListView(
-                children: const [
+                children:  [
                   SizedBox(height: 120),
-                  Center(child: Text('No calls yet')),
+                  Center(child: Text(AppLocalizations.of(context)!.noCallsYet)),
+
                 ],
               )
             : ListView.separated(
@@ -86,7 +88,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     ),
                     title: Text(otherName),
                     subtitle: Text(
-                      '$status • ${isVideo ? 'Video' : 'Audio'}${startedAt.isNotEmpty ? ' • $startedAt' : ''}',
+                      '$status • ${isVideo ? AppLocalizations.of(context)!.video : AppLocalizations.of(context)!.audio}${startedAt.isNotEmpty ? ' • $startedAt' : ''}',
                     ),
                     trailing: duration.isNotEmpty ? Text(duration) : null,
                     onTap: () {

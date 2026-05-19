@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 
 import 'models/notification_model.dart';
 import 'provider/notification_provider.dart';
@@ -31,8 +32,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         backgroundColor: AppConstants.primaryColor,
-        title: const Text(
-          'सूचनाहरू',
+        title: Text(AppLocalizations.of(context)!.notifications, 
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -41,8 +41,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             TextButton(
               onPressed: () =>
                   ref.read(notificationProvider.notifier).markAllRead(),
-              child: const Text(
-                'सबै पढियो',
+              child: Text(AppLocalizations.of(context)!.markAllRead,
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ),
@@ -80,8 +79,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           color: Colors.grey.shade200,
         ),
         const SizedBox(height: 14),
-        Text(
-          'कुनै सूचना छैन',
+        Text(AppLocalizations.of(context)!.noNotifications,
           style: TextStyle(
             fontSize: 15,
             color: Colors.grey.shade400,

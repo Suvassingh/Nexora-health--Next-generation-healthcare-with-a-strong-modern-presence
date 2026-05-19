@@ -65,47 +65,39 @@ class _SignupScreenState extends State<SignupScreen>
 
   // VALIDATION 
 
-  bool _validatePersonalInfo() {
+  bool _validatePersonalInfo( BuildContext context) {
+      final l = AppLocalizations.of(context)!;
+
     if (nameController.text.trim().isEmpty) {
-      Get.snackbar(
-        "Error",
-        "Name is required",
+     Get.snackbar(l.error, l.nameRequired,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
       return false;
     }
     if (phoneController.text.trim().isEmpty) {
-      Get.snackbar(
-        "Error",
-        "Phone is required",
+      Get.snackbar(l.error, l.phoneRequired,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
       return false;
     }
     if (ageController.text.trim().isEmpty) {
-      Get.snackbar(
-        "Error",
-        "Age is required",
+      Get.snackbar(l.error, l.ageRequired,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
       return false;
     }
     if (selectedGender == null) {
-      Get.snackbar(
-        "Error",
-        "Gender is required",
+      Get.snackbar(l.error, l.genderRequired,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
       return false;
     }
     if (addressController.text.trim().isEmpty) {
-      Get.snackbar(
-        "Error",
-        "Address is required",
+      Get.snackbar(l.error, l.addressRequired,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
@@ -114,19 +106,18 @@ class _SignupScreenState extends State<SignupScreen>
     return true;
   }
 
-  bool _validateAccountInfo() {
+
+  bool _validateAccountInfo( BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     if (emailController.text.trim().isEmpty) {
-      Get.snackbar("Error", "Email is required");
-      return false;
+Get.snackbar(l.error, l.emailRequired);      return false;
     }
     if (passwordController.text.length < 6) {
-      Get.snackbar("Error", "Password must be at least 6 characters");
+      Get.snackbar(l.error, l.passwordMinSix);
       return false;
     }
     if (passwordController.text != confirmPasswordController.text) {
-      Get.snackbar(
-        "Error",
-        "Passwords do not match",
+      Get.snackbar(l.error, l.passwordMismatch,
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
@@ -204,7 +195,9 @@ class _SignupScreenState extends State<SignupScreen>
   //  SIGN UP 
 
   Future<void> signUp() async {
-    if (!_validateAccountInfo()) return;
+      final l = AppLocalizations.of(context)!; 
+
+    if (!_validateAccountInfo(context)) return;
 
     setState(() => loading = true);
 
@@ -215,9 +208,7 @@ class _SignupScreenState extends State<SignupScreen>
       );
 
       if (result.user == null) {
-        Get.snackbar(
-          "Error",
-          "Sign up failed",
+            Get.snackbar(l.error, l.signUpFailed, 
           colorText: Colors.white,
           backgroundColor: Colors.redAccent,
         );
@@ -226,10 +217,7 @@ class _SignupScreenState extends State<SignupScreen>
 
       await _saveProfile(result.user!.id);
 
-      Get.snackbar(
-        'सफल! / Success',
-        'Account created successfully!',
-        backgroundColor: Colors.green.shade100,
+    Get.snackbar(l.success, l.accountCreated,         backgroundColor: Colors.green.shade100,
         duration: const Duration(seconds: 2),
       );
       await Future.delayed(const Duration(seconds: 2));
@@ -245,31 +233,25 @@ class _SignupScreenState extends State<SignupScreen>
           );
           if (loginResult.user != null) {
             await _saveProfile(loginResult.user!.id);
-            Get.snackbar(
-              'सफल! / Success',
-              'Account setup complete!',
+                Get.snackbar(l.success, l.accountSetupComplete,
               backgroundColor: Colors.green.shade100,
             );
             await Future.delayed(const Duration(seconds: 2));
             Get.offAll(() => LoginScreen());
           }
         } catch (_) {
-          Get.snackbar(
-            'Sign Up Failed',
-            'This email is already registered. Please login instead.',
+              Get.snackbar(l.signUpFailed, l.emailAlreadyRegistered,
             backgroundColor: Colors.red.shade100,
           );
         }
       } else {
-        Get.snackbar(
-          'Sign Up Failed',
+            Get.snackbar(l.signUpFailed,
           _authErrorMessage(e.message),
           backgroundColor: Colors.red.shade100,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Sign Up Failed',
+          Get.snackbar(l.signUpFailed,
         e.toString(),
         backgroundColor: Colors.redAccent,
       );
@@ -281,6 +263,7 @@ class _SignupScreenState extends State<SignupScreen>
   //  GOOGLE SIGN IN 
 
   Future<void> continueWithGoogle() async {
+      final l = AppLocalizations.of(context)!; 
     setState(() => loading = true);
 
     try {
@@ -361,16 +344,13 @@ class _SignupScreenState extends State<SignupScreen>
           ageController.text.trim().isNotEmpty;
 
       if (!hasCompleteProfile) {
-        Get.snackbar(
-          'प्रोफाइल अपूर्ण',
-          'Please complete your profile in settings.',
+            Get.snackbar(l.incompleteProfile, l.completeProfileHint,
           backgroundColor: Colors.orange.shade100,
           duration: const Duration(seconds: 4),
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Google Sign-In Failed',
+          Get.snackbar(l.googleSignInFailed,
         e.toString(),
         backgroundColor: Colors.red.shade100,
       );
@@ -398,9 +378,9 @@ class _SignupScreenState extends State<SignupScreen>
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               indicatorColor: AppConstants.whiteColor,
-              tabs: const [
-                Tab(text: "Personal Info"),
-                Tab(text: "Account Info"),
+             tabs: [
+                Tab(text: AppLocalizations.of(context)!.personalInfo),
+                Tab(text: AppLocalizations.of(context)!.accountInfo),
               ],
             ),
             title: const Row(
@@ -548,7 +528,7 @@ class _SignupScreenState extends State<SignupScreen>
                       LoginSignupButton(
                         text: AppLocalizations.of(context)!.next,
                         onPressed: () {
-                          if (_validatePersonalInfo()) {
+                          if (_validatePersonalInfo(context)) {
                             tabController.animateTo(1);
                           }
                         },
@@ -578,8 +558,7 @@ class _SignupScreenState extends State<SignupScreen>
                         ],
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        "or signup with",
+                      Text(AppLocalizations.of(context)!.orSignupWith,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -588,7 +567,7 @@ class _SignupScreenState extends State<SignupScreen>
                       const SizedBox(height: 10),
                       ImageButton(
                         imagePath: "assets/images/google.png",
-                        text: "Google",
+                        text: AppLocalizations.of(context)!.google,
                         onPressed: continueWithGoogle,
                       ),
                       const SizedBox(height: 30),
@@ -672,20 +651,19 @@ class _SignupScreenState extends State<SignupScreen>
         if (loading)
           Container(
             color: Colors.black.withOpacity(0.4),
-            child: const Center(
+            child: Center(
               child: Card(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(
+                      const CircularProgressIndicator(
                         color: AppConstants.primaryColor,
                       ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Creating account...',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context)!.creatingAccount,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),

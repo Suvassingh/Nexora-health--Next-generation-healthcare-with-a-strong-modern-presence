@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/appointment_screen.dart';
-import 'package:patient_app/chat_screen.dart';
-import 'package:patient_app/models/appointment_model.dart';
 import 'package:patient_app/profile_page.dart';
 import 'package:patient_app/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/notification_model.dart';
 import 'package:patient_app/models/patients_model.dart';
 import 'package:patient_app/notification_screen.dart';
@@ -52,18 +53,17 @@ class _HomePageState extends ConsumerState<HomePage> {
           AlertDialog(
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: const Text(
-              'अपोइन्टमेन्ट रद्द गर्नुहोस्?',
+            title: Text(AppLocalizations.of(context)!.cancelAppointmentTitle,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            content: Text(
-              'डा. $doctorName सँगको अपोइन्टमेन्ट रद्द गर्न चाहनुहुन्छ?',
+           content: Text(AppLocalizations.of(context)!.cancelAppointmentConfirm(doctorName),
               style: const TextStyle(fontSize: 14),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('नहोस्'),
+               child: Text(AppLocalizations.of(context)!.no),
+
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
@@ -74,7 +74,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('रद्द गर्नुहोस्'),
+                child: Text(AppLocalizations.of(context)!.cancelConfirmBtn),
               ),
             ],
           ),
@@ -130,13 +130,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  String get _greeting {
-    final h = DateTime
-        .now()
-        .hour;
-    if (h < 12) return 'शुभ बिहान';
-    if (h < 17) return 'शुभ दिउँसो';
-    return 'शुभ साँझ';
+// WITH THIS:
+  String _greeting(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final h = DateTime.now().hour;
+    if (h < 12) return l10n.goodMorning;
+    if (h < 17) return l10n.goodAfternoon;
+    return l10n.goodEvening;
   }
 
 
@@ -295,7 +295,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
                   style: const TextStyle(color: Color(0xFF1A1A1A)),
                   children: [
                     TextSpan(
-                      text: '$_greeting, $firstName ',  
+text: '${_greeting(context)}, $firstName ',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -328,9 +328,9 @@ PreferredSizeWidget _buildAppBar() => AppBar(
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
-          'आज तपाईंलाई कस्तो महसुस भइरहेको छ?',
-          style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+        Text(
+          AppLocalizations.of(context)!.howareyoufeelingtoday,
+          style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
         ),
       ],
     );
@@ -471,7 +471,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
                             Icon(a.consultIcon, size: 13, color: Colors.grey),
                             const SizedBox(width: 3),
                             Text(
-                              _consultTypeLabel(a.consultationType),
+                              _consultTypeLabel(a.consultationType, context),
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey,
@@ -769,7 +769,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
             ),
           const SizedBox(height: 4),
           Text(
-            _consultTypeLabel(type),
+            _consultTypeLabel(type, context),
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const Spacer(),
@@ -1006,7 +1006,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
                   Icon(a.consultIcon, size: 11, color: Colors.grey),
                   const SizedBox(width: 3),
                   Text(
-                    _consultTypeLabel(a.consultationType),
+                    _consultTypeLabel(a.consultationType, context),
                     style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
@@ -1121,14 +1121,15 @@ PreferredSizeWidget _buildAppBar() => AppBar(
     );
   }
 
-  String _consultTypeLabel(String type) {
+  String _consultTypeLabel(String type, BuildContext  context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
       case 'video':
-        return 'भिडियो';
+        return l10n.video;
       case 'audio':
-        return 'अडियो';
+        return l10n.audio;
       default:
-        return 'च्याट';
+        return l10n.chat;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/app_constants.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/profile_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,7 +17,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentCtrl = TextEditingController();
   final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-
+AppLocalizations get _l => AppLocalizations.of(context)!;
   bool _showCurrent = false;
   bool _showNew = false;
   bool _showConfirm = false;
@@ -46,13 +47,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   String get _strengthLabel {
     switch (_strength) {
       case 1:
-        return 'कमजोर';
+        return _l.strengthWeak;
       case 2:
-        return 'ठीकठाक';
+        return _l.strengthFair;
       case 3:
-        return 'राम्रो';
+        return _l.strengthGood;
       case 4:
-        return 'उत्कृष्ट';
+        return _l.strengthExcellent;
       default:
         return '';
     }
@@ -82,7 +83,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       // Step 1 — Re-authenticate with current password to verify identity
       final user = Supabase.instance.client.auth.currentUser;
       if (user?.email == null) {
-        _showSnack('ईमेल फेला परेन', isError: true);
+        _showSnack(_l.emailNotFound, isError: true);
         return;
       }
 
@@ -93,7 +94,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
 
       if (checkRes.user == null) {
-        _showSnack('हालको पासवर्ड गलत छ', isError: true);
+        _showSnack(_l.currentPasswordWrong, isError: true);
         return;
       }
 
@@ -103,15 +104,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
 
       Get.to(() => ProfilePage());
-      Get.snackbar(
-        "Success",
-        "Password changed successfully",
+      Get.snackbar(_l.success, _l.passwordChangedSuccess,
         snackPosition: SnackPosition.BOTTOM,
       );
     } on AuthException catch (e) {
       _showSnack(e.message, isError: true);
     } catch (e) {
-      _showSnack('केही गलत भयो: $e', isError: true);
+_showSnack('${_l.somethingWentWrong}: $e', isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -210,10 +209,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         children: [
           const Icon(Icons.info_outline, color: Color(0xFFE65100), size: 18),
           const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'सुरक्षाको लागि, पहिले आफ्नो हालको पासवर्ड प्रविष्ट गर्नुहोस्। नयाँ पासवर्ड कम्तीमा ८ अक्षरको हुनुपर्छ।',
-              style: TextStyle(
+          Expanded(
+              child: Text(_l.passwordSecurityInfo,
+              style: const TextStyle(
                 fontSize: 12.5,
                 color: Color(0xFFE65100),
                 height: 1.5,
@@ -244,16 +242,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           //  Current password 
-          _buildFieldLabel('हालको पासवर्ड', Icons.lock_outline),
+_buildFieldLabel(_l.currentPassword, Icons.lock_outline),
           const SizedBox(height: 8),
           _buildPasswordField(
             controller: _currentCtrl,
-            hint: 'हालको पासवर्ड लेख्नुहोस्',
+            hint: _l.currentPasswordHint,
             show: _showCurrent,
             onToggle: () => setState(() => _showCurrent = !_showCurrent),
             validator: (val) {
               if (val == null || val.isEmpty) {
-                return 'हालको पासवर्ड आवश्यक छ';
+                return _l.currentPasswordRequired;
               }
               return null;
             },
@@ -264,23 +262,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           const SizedBox(height: 20),
 
           //  New password 
-          _buildFieldLabel('नयाँ पासवर्ड', Icons.lock_reset_outlined),
+_buildFieldLabel(_l.newPassword, Icons.lock_reset_outlined),
           const SizedBox(height: 8),
           _buildPasswordField(
             controller: _newCtrl,
-            hint: 'नयाँ पासवर्ड लेख्नुहोस्',
+            hint: _l.newPasswordHint,
             show: _showNew,
             onToggle: () => setState(() => _showNew = !_showNew),
             onChanged: _checkStrength,
             validator: (val) {
               if (val == null || val.isEmpty) {
-                return 'नयाँ पासवर्ड आवश्यक छ';
+                return _l.newPasswordRequired;
               }
               if (val.length < 8) {
-                return 'कम्तीमा ८ अक्षर हुनुपर्छ';
+                return _l.minEightChars;
               }
               if (val == _currentCtrl.text) {
-                return 'नयाँ पासवर्ड हालको भन्दा फरक हुनुपर्छ';
+                return _l.passwordMustDiffer;
               }
               return null;
             },
@@ -296,21 +294,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
           //  Confirm password 
           _buildFieldLabel(
-            'पासवर्ड पुष्टि गर्नुहोस्',
+            _l.confirmpassword,
             Icons.check_circle_outline,
           ),
           const SizedBox(height: 8),
           _buildPasswordField(
             controller: _confirmCtrl,
-            hint: 'पासवर्ड दोहोर्याउनुहोस्',
+            hint: _l.repeatPasswordHint,
             show: _showConfirm,
             onToggle: () => setState(() => _showConfirm = !_showConfirm),
             validator: (val) {
               if (val == null || val.isEmpty) {
-                return 'पासवर्ड पुष्टि आवश्यक छ';
+                return _l.confirmPasswordRequired;
               }
               if (val != _newCtrl.text) {
-                return 'पासवर्ड मेल खाएन';
+                return _l.passwordMismatch;
               }
               return null;
             },
@@ -423,7 +421,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         if (_strengthLabel.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
-            'पासवर्ड शक्ति: $_strengthLabel',
+            '${_l.passwordStrength}: $_strengthLabel',
             style: TextStyle(
               fontSize: 11.5,
               color: _strengthColor,
@@ -446,8 +444,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'सुरक्षित पासवर्डका लागि:',
+           Text(
+            _l.passwordTipsTitle,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -455,10 +453,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _tip('कम्तीमा ८ अक्षर प्रयोग गर्नुहोस्'),
-          _tip('ठूलो र सानो अक्षर मिसाउनुहोस् (A–Z, a–z)'),
-          _tip('अंक समावेश गर्नुहोस् (0–9)'),
-          _tip('विशेष चिह्न थप्नुहोस् (!@#\$%)'),
+         _tip(_l.tipMinChars),
+          _tip(_l.tipMixCase),
+          _tip(_l.tipIncludeNumbers),
+          _tip(_l.tipSpecialChars),
         ],
       ),
     );
@@ -516,13 +514,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   color: Colors.white,
                 ),
               )
-            : const Row(
+            :  Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.lock_reset, size: 18),
                   SizedBox(width: 8),
                   Text(
-                    'पासवर्ड परिवर्तन गर्नुहोस्',
+                    _l.changePassword,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ],

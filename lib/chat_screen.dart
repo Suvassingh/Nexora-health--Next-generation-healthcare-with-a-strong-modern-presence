@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:patient_app/app_constants.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/appointment_model.dart';
 import 'package:patient_app/services/encryption_service.dart';
 import 'package:patient_app/widgets/message_bubble.dart';
@@ -64,7 +65,10 @@ class _ChatScreenState extends State<ChatScreen> {
       await _loadMessages();
       _subscribeToMessages();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to initialize chat: $e');
+      Get.snackbar(
+        AppLocalizations.of(context)!.error,
+        '${AppLocalizations.of(context)!.chatInitFailed}: $e',
+      );
     } finally {
       setState(() => _loading = false);
     }
@@ -147,8 +151,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<String> _getOrCreateConversation() async {
-    // Look for existing conversation between this patient and doctor
-    // Validate doctorId is a UUID before hitting Supabase
     final uuidRegex = RegExp(
       r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
       caseSensitive: false,
@@ -412,7 +414,10 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       // Remove failed optimistic message
       setState(() => _messages.removeWhere((m) => m['id'] == null));
-      Get.snackbar('Error', 'Failed to send media: $e');
+      Get.snackbar(
+        AppLocalizations.of(context)!.error,
+        '${AppLocalizations.of(context)!.mediaUploadFailed}: $e',
+      );
     } finally {
       setState(() => _sending = false);
     }
@@ -424,7 +429,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dr. ${widget.appt.doctorName}'),
+        title: Text(
+          '${AppLocalizations.of(context)!.doctorPrefix} ${widget.appt.doctorName}',
+        ),
+
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -482,7 +490,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: TextField(
                 controller: _messageController,
                 decoration: InputDecoration(
-                  hintText: 'Type a message…',
+hintText: AppLocalizations.of(context)!.typeAMessage,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,

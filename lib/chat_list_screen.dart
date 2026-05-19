@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/chat_screen.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/provider/chat_provider.dart';
 import 'package:patient_app/widgets/chat_title.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -65,8 +66,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         elevation: 0,
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
-        title: const Text(
-          'Messages',
+    title: Text(AppLocalizations.of(context)!.messages,
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
       ),
@@ -76,13 +76,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Failed to load chats',
-                  style: TextStyle(color: Colors.grey.shade500)),
+              Text(
+                AppLocalizations.of(context)!.failedToLoadChats,
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () => ref.invalidate(chatListProvider),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+label: Text(AppLocalizations.of(context)!.retry),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1565C0),
                   foregroundColor: Colors.white,
@@ -120,14 +122,13 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         Icon(Icons.chat_bubble_outline_rounded,
             size: 72, color: Colors.grey.shade300),
         const SizedBox(height: 16),
-        Text('No chats yet',
-            style: TextStyle(
+Text(AppLocalizations.of(context)!.noChatsYet,             style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey.shade500,
                 fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
         Text(
-          'Book a chat appointment to start messaging\nyour doctor.',
+          AppLocalizations.of(context)!.bookChatAppointmentHint,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
         ),

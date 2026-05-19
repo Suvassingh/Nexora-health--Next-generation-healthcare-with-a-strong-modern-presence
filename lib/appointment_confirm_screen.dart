@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/app_constants.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/doctor_model.dart';
 import 'package:patient_app/nepal_location.dart';
 import 'package:patient_app/services/api_service.dart';
@@ -82,7 +83,9 @@ bool get _canProceed => switch (_step) {
   };
 
   void _snack(String msg, {bool err = false}) => Get.snackbar(
-    err ? 'त्रुटि' : 'सफल',
+    err
+        ? AppLocalizations.of(context)!.error
+        : AppLocalizations.of(context)!.success,
     msg,
     backgroundColor: err ? const Color(0xFFFEF2F2) : const Color(0xFFEAF7EF),
     colorText: err ? const Color(0xFFEF4444) : const Color(0xFF1A7A4A),
@@ -125,7 +128,8 @@ Future<void> _fetchDoctors() async {
     } catch (e, stack) {
       print(' Error fetching doctors: $e\n$stack');
       setState(() => _loadingDoctors = false);
-      _snack('डाक्टर लोड गर्न सकिएन', err: true);
+      _snack(AppLocalizations.of(context)!.doctorLoadFailed, err: true);
+
     } finally {
       _fetchLock = false;
     }
@@ -155,7 +159,7 @@ Future<void> _fetchDoctors() async {
 
   Future<void> _book() async {
     if (_supa.auth.currentUser == null) {
-      _snack('कृपया पहिले लग इन गर्नुहोस्।', err: true);
+     _snack(AppLocalizations.of(context)!.pleaseLoginFirst, err: true);
       return;
     }
     setState(() => _booking = true);
@@ -184,10 +188,11 @@ Future<void> _fetchDoctors() async {
     } catch (e) {
       setState(() => _booking = false);
       if (e.toString().contains('409')) {
-        _snack('यो समय बुक भयो, अर्को छान्नुहोस्।', err: true);
+       _snack(AppLocalizations.of(context)!.slotAlreadyBooked, err: true);
         await _checkAvailability();
       } else {
-        _snack('बुकिङ असफल: $e', err: true);
+       _snack('${AppLocalizations.of(context)!.bookingFailed}: $e', err: true);
+
       }
     }
   }
@@ -216,8 +221,7 @@ Future<void> _fetchDoctors() async {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'अपॉइन्टमेन्ट बुक भयो!',
+             Text(AppLocalizations.of(context)!.appointmentBooked,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -245,8 +249,8 @@ Future<void> _fetchDoctors() async {
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text(
-                  'ठीक छ',
+                child: Text(
+                  AppLocalizations.of(context)!.ok,
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -274,12 +278,15 @@ Future<void> _fetchDoctors() async {
     }
   }
 
-  static const _stepTitles = [
-    'परामर्श प्रकार',
-    'डाक्टर छान्नुहोस्',
-    'मिति र समय',
-    'लक्षण र सारांश',
-  ];
+List<String> _stepTitles(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return [
+      l.consultationType,
+      l.selectDoctor,
+      l.dateAndTime,
+      l.symptomsAndSummary,
+    ];
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -293,7 +300,7 @@ Future<void> _fetchDoctors() async {
         onPressed: _back,
       ),
       title: Text(
-        _stepTitles[_step],
+        _stepTitles(context)[_step],
         style: const TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.bold,
@@ -362,7 +369,9 @@ Future<void> _fetchDoctors() async {
                       ),
                     )
                   : Text(
-                      _step == 3 ? 'अपॉइन्टमेन्ट बुक गर्नुहोस्' : 'अर्को →',
+                      _step == 3
+                          ? AppLocalizations.of(context)!.bookAppointmentBtn
+                          : AppLocalizations.of(context)!.nextArrow,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -435,7 +444,7 @@ Future<void> _fetchDoctors() async {
       type: _type!,
       date: _selectedDate!,
       slot: _selectedSlot!,
-      sympCtrl: _sympCtrl,
+      sympCtrl: _sympCtrl, parentContext: context,
     ),
     _ => const SizedBox(),
   };
@@ -452,8 +461,8 @@ class _Step1Type extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'कसरी डाक्टरसँग कुरा गर्न चाहनुहुन्छ?',
+        Text(
+          AppLocalizations.of(context)!.howToConsult,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -461,8 +470,8 @@ class _Step1Type extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'परामर्श प्रकार छान्नुहोस्',
+       Text(
+          AppLocalizations.of(context)!.selectConsultationType,
           style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
         ),
         const SizedBox(height: 28),
@@ -610,7 +619,7 @@ class _Step2Doctor extends StatelessWidget {
       children: [
         // Province — reads directly from NepalLocation, Nepali keys
         _LocDrop(
-          hint: 'प्रदेश छान्नुहोस्',
+          hint: AppLocalizations.of(context)!.selectProvince,
           value: province,
           items: NepalLocation.provinces,
           onChanged: onProvinceChange,
@@ -619,8 +628,8 @@ class _Step2Doctor extends StatelessWidget {
         // District — enabled only after province chosen
         _LocDrop(
           hint: province == null
-              ? 'पहिले प्रदेश छान्नुहोस्'
-              : 'जिल्ला छान्नुहोस्',
+              ? AppLocalizations.of(context)!.selectProvinceFirst
+              : AppLocalizations.of(context)!.selectDistrict,
           value: district,
           enabled: province != null,
           items: province != null ? NepalLocation.districtsOf(province!) : [],
@@ -629,9 +638,9 @@ class _Step2Doctor extends StatelessWidget {
         const SizedBox(height: 10),
         // Municipality — optional, enabled after district chosen
         _LocDrop(
-          hint: district == null
-              ? 'पहिले जिल्ला छान्नुहोस्'
-              : 'नगरपालिका (वैकल्पिक)',
+         hint: district == null
+              ? AppLocalizations.of(context)!.selectDistrictFirst
+              : AppLocalizations.of(context)!.selectMunicipality,
           value: municipality,
           enabled: district != null,
           items: district != null
@@ -657,7 +666,7 @@ class _Step2Doctor extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'प्रदेश र जिल्ला छान्नुहोस्',
+                    AppLocalizations.of(context)!.selectProvinceAndDistrict,
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                   ),
                 ],
@@ -684,7 +693,7 @@ class _Step2Doctor extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'यस क्षेत्रमा डाक्टर भेटिएन',
+                    AppLocalizations.of(context)!.noDoctorsInArea,
                     style: TextStyle(color: Colors.grey.shade400),
                   ),
                 ],
@@ -818,7 +827,7 @@ class _LocDrop extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
-                    item.isEmpty ? 'सबै' : item,
+                    item.isEmpty ? AppLocalizations.of(context)!.all : item,
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF1A1A2E),
@@ -860,6 +869,7 @@ class _Step4Confirm extends StatelessWidget {
   final DateTime date;
   final Slot slot;
   final TextEditingController sympCtrl;
+  final BuildContext parentContext;
 
   const _Step4Confirm({
     required this.doctor,
@@ -867,6 +877,7 @@ class _Step4Confirm extends StatelessWidget {
     required this.date,
     required this.slot,
     required this.sympCtrl,
+    required this.parentContext,
   });
 
   String _fmtDate(DateTime d) {
@@ -885,91 +896,113 @@ class _Step4Confirm extends StatelessWidget {
       'Dec',
     ];
     const w = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     return '${w[d.weekday - 1]}, ${d.day} ${m[d.month - 1]} ${d.year}';
   }
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Summary card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppConstants.primaryColor.withOpacity(0.03),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppConstants.primaryColor.withOpacity(0.15),
-            ),
-          ),
-          child: Column(
-            children: [
-              _SRow(
-                Icons.person_outline_rounded,
-                'डाक्टर',
-                'डा. ${doctor.name}',
-              ),
-              _SRow(Icons.home_outlined, 'स्वास्थ्य संस्था', doctor.hospital),
-              _SRow(Icons.calendar_today_outlined, 'मिति', _fmtDate(date)),
-              _SRow(Icons.access_time_rounded, 'समय', slot.display),
-              _SRow(
-                type == ConsultationType.chat
-                    ? Icons.chat_bubble_outline_rounded
-                    : type == ConsultationType.audio
-                    ? Icons.phone_outlined
-                    : Icons.videocam_outlined,
-                'प्रकार',
-                type == ConsultationType.chat
-                    ? 'च्याट'
-                    : type == ConsultationType.audio
-                    ? 'अडियो'
-                    : 'भिडियो',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'लक्षणहरू (वैकल्पिक)',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: sympCtrl,
-          maxLines: 4,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
-          decoration: InputDecoration(
-            hintText: 'आफ्नो लक्षण यहाँ लेख्नुहोस्...',
-            hintStyle: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 13),
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.all(14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: AppConstants.primaryColor,
-                width: 1.5,
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+
+    final typeIcon = type == ConsultationType.chat
+        ? Icons.chat_bubble_outline_rounded
+        : type == ConsultationType.audio
+        ? Icons.call_outlined
+        : Icons.videocam_outlined;
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Summary card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppConstants.primaryColor.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppConstants.primaryColor.withOpacity(0.15),
               ),
             ),
+            child: Column(
+              children: [
+                _SRow(
+                  Icons.person_outline_rounded,
+                  l.doctor,
+                  'डा. ${doctor.name}',
+                ),
+                _SRow(
+                  Icons.home_outlined,
+                  l.healthInstitution,
+                  doctor.hospital,
+                ),
+                _SRow(Icons.calendar_today_outlined, l.date, _fmtDate(date)),
+                _SRow(Icons.access_time_rounded, l.time, slot.display),
+                _SRow(
+                  typeIcon,
+                  l.type,
+                  type == ConsultationType.chat
+                      ? l.chat
+                      : type == ConsultationType.audio
+                      ? l.audio
+                      : l.video,
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+
+          const SizedBox(height: 20),
+
+          /// Symptoms label
+          Text(
+            l.symptomsOptional,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF64748B),
+            ),
+            
+          ),
+
+          const SizedBox(height: 8),
+
+          /// Symptoms field
+          TextFormField(
+            controller: sympCtrl,
+            maxLines: 4,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+            decoration: InputDecoration(
+              hintText: l.symptomsHint,
+              hintStyle: const TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.all(14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppConstants.primaryColor,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SRow extends StatelessWidget {

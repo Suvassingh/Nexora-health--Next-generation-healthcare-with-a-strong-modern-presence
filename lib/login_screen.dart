@@ -35,34 +35,34 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+// REPLACE the whole login() method start:
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final l = AppLocalizations.of(context)!;
 
     if (email.isEmpty) {
-      Get.snackbar("Error", "Please enter your email");
+      Get.snackbar(l.error, l.emailRequired);
       return;
     }
     if (password.isEmpty) {
-      Get.snackbar("Error", "Please enter your password");
+      Get.snackbar(l.error, l.passwordRequired);
       return;
     }
 
     setState(() => loading = true);
-
     try {
       final result = await supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-
       if (result.user != null) {
         Get.offAll(() => HomeScreen());
       }
     } on AuthException catch (e) {
-      Get.snackbar("Login Failed", e.message);
+      Get.snackbar(l.loginFailed, e.message);
     } catch (e) {
-      Get.snackbar("Error", e.toString());
+      Get.snackbar(l.error, e.toString());
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -205,20 +205,19 @@ class _LoginScreenState extends State<LoginScreen> {
           if (loading)
             Container(
               color: Colors.black.withOpacity(0.4),
-              child: const Center(
+              child: Center(
                 child: Card(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                           color: AppConstants.primaryColor,
                         ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Logging in...',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                        const SizedBox(height: 16),
+                       Text(AppLocalizations.of(context)!.loggingIn,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),

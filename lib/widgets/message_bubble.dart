@@ -3,7 +3,6 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:patient_app/services/encryption_service.dart';
 import 'package:patient_app/widgets/video_preview.dart';
 
 class MessageBubble extends StatelessWidget {

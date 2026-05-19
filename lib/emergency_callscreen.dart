@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 
@@ -182,8 +183,7 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'नम्बर / Number:',
+            Text(AppLocalizations.of(context)!.numberLabel,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
             const SizedBox(height: 4),
@@ -197,8 +197,7 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              'यो नम्बरमा कल गर्न चाहनुहुन्छ?',
+            Text(AppLocalizations.of(context)!.confirmCall,
               style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
           ],
@@ -207,12 +206,13 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('रद्द', style: TextStyle(color: Colors.grey)),
+           child: Text(AppLocalizations.of(context)!.cancel,
+style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.phone_rounded, size: 16),
-            label: const Text('कल गर्नुहोस्'),
+label: Text(AppLocalizations.of(context)!.callBtn),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFB71C1C),
               foregroundColor: Colors.white,
@@ -240,8 +240,8 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
         await Clipboard.setData(ClipboardData(text: number));
         if (mounted) {
           Get.snackbar(
-            'नम्बर कपी गरियो',
-            '$number क्लिपबोर्डमा कपी गरियो',
+            AppLocalizations.of(context)!.numberCopied, 
+AppLocalizations.of(context)!.numberCopiedToClipboard(number),
             backgroundColor: const Color(0xFFEAF7EF),
             colorText: const Color(0xFF1A7A4A),
             borderRadius: 12,
@@ -254,8 +254,8 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
       await Clipboard.setData(ClipboardData(text: number));
       if (mounted) {
         Get.snackbar(
-          'नम्बर कपी गरियो',
-          '$number कपी गरियो',
+          AppLocalizations.of(context)!.numberCopied,
+          AppLocalizations.of(context)!.numberCopiedToClipboard(number),
           backgroundColor: const Color(0xFFEAF7EF),
           colorText: const Color(0xFF1A7A4A),
           borderRadius: 12,
@@ -280,8 +280,7 @@ class _EmergencyCallscreenState extends State<EmergencyCallscreen>
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'आपतकालीन सम्पर्क',
+        title: Text(AppLocalizations.of(context)!.emergencyContact,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,

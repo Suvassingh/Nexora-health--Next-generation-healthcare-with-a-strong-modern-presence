@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:get/get.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/webrtc_service.dart';
@@ -48,7 +49,7 @@ class _CallScreenState extends State<CallScreen>
   bool _ended      = false;
   bool _controlsVisible = true;
 
-  String _statusText = 'Connecting…';
+  String _statusText = '';
   Timer? _callTimer;
   Timer? _controlsTimer;
   int _seconds = 0;
@@ -67,6 +68,11 @@ class _CallScreenState extends State<CallScreen>
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+ 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted)
+        setState(() => _statusText = AppLocalizations.of(context)!.connecting);
+    });
 
     _ctrlAnim = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 250),
@@ -87,7 +93,7 @@ class _CallScreenState extends State<CallScreen>
       setState(() {
         _remoteRenderer.srcObject = stream;
         _connected  = true;
-        _statusText = 'Connected';
+setState(() => _statusText = AppLocalizations.of(context)!.connected);
       });
       _startCallTimer();
       if (widget.isVideo) _webrtc.setSpeaker(true);
@@ -103,14 +109,18 @@ class _CallScreenState extends State<CallScreen>
       if (mounted) setState(() => _localRenderer.srcObject = local);
 
       if (widget.isCaller) {
-        if (mounted) setState(() => _statusText = 'Ringing…');
+        if (mounted) setState(() => _statusText = AppLocalizations.of(context)!.ringing);
+
         await _webrtc.startAsCallerCall(
           callId: widget.callId,
           currentUserId: _currentUserId,
           isVideo: widget.isVideo,
         );
       } else {
-        if (mounted) setState(() => _statusText = 'Connecting…');
+        if (mounted) setState(
+            () => _statusText = AppLocalizations.of(context)!.connecting,
+          );
+
         await _webrtc.startAsCalleeCall(
           callId: widget.callId,
           currentUserId: _currentUserId,
@@ -123,7 +133,7 @@ class _CallScreenState extends State<CallScreen>
       }
     } catch (e) {
       if (mounted) {
-        Get.snackbar('Call Error', e.toString(),
+        Get.snackbar(AppLocalizations.of(context)!.callError, e.toString(),
           backgroundColor: Colors.red.shade800,
           colorText: Colors.white,
         );
@@ -307,18 +317,17 @@ class _CallScreenState extends State<CallScreen>
               if (_loading)
                 Container(
                   color: Colors.black87,
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(
+                        const CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2.5,
                         ),
-                        SizedBox(height: 20),
-                        Text(
-                          'Setting up call…',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        const SizedBox(height: 20),
+                        Text(AppLocalizations.of(context)!.settingUpCall,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
                         ),
                       ],
                     ),
@@ -525,27 +534,34 @@ class _BottomControls extends StatelessWidget {
           children: [
             _CtrlBtn(
               icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-              label: muted ? 'Unmute' : 'Mute',
+             label: muted
+                  ? AppLocalizations.of(context)!.unmute
+                  : AppLocalizations.of(context)!.mute,
               active: muted,
               onTap: onMute,
             ),
             if (isVideo)
               _CtrlBtn(
                 icon: cameraOff ? Icons.videocam_off_rounded : Icons.videocam_rounded,
-                label: cameraOff ? 'Cam On' : 'Cam Off',
+               label: cameraOff
+                    ? AppLocalizations.of(context)!.camOn
+                    : AppLocalizations.of(context)!.camOff,
+
                 active: cameraOff,
                 onTap: onCamera,
               ),
             _CtrlBtn(
               icon: speakerOn ? Icons.volume_up_rounded : Icons.hearing_rounded,
-              label: speakerOn ? 'Speaker' : 'Earpiece',
+              label: speakerOn
+                  ? AppLocalizations.of(context)!.speaker
+                  : AppLocalizations.of(context)!.earpiece,
               active: speakerOn,
               onTap: onSpeaker,
             ),
             if (isVideo)
               _CtrlBtn(
                 icon: Icons.flip_camera_ios_rounded,
-                label: 'Flip',
+label: AppLocalizations.of(context)!.flip,
                 active: false,
                 onTap: () => onFlip(),
               ),
