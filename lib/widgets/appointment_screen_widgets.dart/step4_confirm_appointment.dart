@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/widgets/appointment_screen_widgets.dart/slot_group.dart';
 
 class Step4DateTime extends StatelessWidget {
@@ -23,29 +24,27 @@ class Step4DateTime extends StatelessWidget {
     required this.onSlotSelect,
   });
 
-  static const _dayLabels = [
-    'आइत',
-    'सोम',
-    'मंगल',
-    'बुध',
-    'बिहि',
-    'शुक्र',
-    'शनि',
-  ];
-  static const _monthNames = [
-    'जनवरी',
-    'फेब्रुअरी',
-    'मार्च',
-    'अप्रिल',
-    'मे',
-    'जुन',
-    'जुलाई',
-    'अगस्ट',
-    'सेप्टेम्बर',
-    'अक्टोबर',
-    'नोभेम्बर',
-    'डिसेम्बर',
-  ];
+ static List<String> _dayLabels(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return [l.sun, l.mon, l.tue, l.wed, l.thu, l.fri, l.sat];
+  }
+static List<String> _monthNames(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return [
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
+    ];
+  }
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -53,8 +52,7 @@ class Step4DateTime extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'मिति र समय छान्नुहोस्',
+         Text(AppLocalizations.of(context)!.selectDateAndTime,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -90,7 +88,7 @@ class Step4DateTime extends StatelessWidget {
                     // ),
                     Expanded(
                       child: Text(
-                        '${_monthNames[focusedMonth.month - 1]} ${focusedMonth.year}',
+                       '${_monthNames(context)[focusedMonth.month - 1]} ${focusedMonth.year}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,
@@ -112,7 +110,7 @@ class Step4DateTime extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
-                  children: _dayLabels
+                  children: _dayLabels(context)
                       .map(
                         (d) => Expanded(
                           child: Center(
@@ -141,8 +139,7 @@ class Step4DateTime extends StatelessWidget {
         if (selectedDate != null) ...[
           Row(
             children: [
-              const Text(
-                'समय छान्नुहोस्',
+              Text(AppLocalizations.of(context)!.selectTime,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -152,7 +149,8 @@ class Step4DateTime extends StatelessWidget {
               const Spacer(),
               if (!loadingSlots && availability.isNotEmpty)
                 Text(
-                  '${availability.values.where((v) => !v).length} उपलब्ध',
+                  '${availability.values.where((v) => !v).length} ${AppLocalizations.of(context)!.available}',
+
                   style: TextStyle(
                     fontSize: 11,
                     color: AppConstants.primaryColor,
@@ -173,7 +171,7 @@ class Step4DateTime extends StatelessWidget {
             )
           else ...[
             SlotGroup(
-              'बिहान / Morning',
+              AppLocalizations.of(context)!.morning,
               morningSlots,
               selectedSlot,
               availability,
@@ -181,7 +179,7 @@ class Step4DateTime extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             SlotGroup(
-              'दिउँसो / Afternoon',
+              AppLocalizations.of(context)!.afternoon,
               afternoonSlots,
               selectedSlot,
               availability,
@@ -204,8 +202,7 @@ class Step4DateTime extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'पहिले मिति छान्नुहोस्',
+               Text(AppLocalizations.of(context)!.selectDateFirst,
                   style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 ),
               ],

@@ -1288,6 +1288,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notifications'**
   String get noNotifications;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @busy.
+  ///
+  /// In en, this message translates to:
+  /// **'Busy'**
+  String get busy;
+
+  /// No description provided for @sun.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get sun;
+
+  /// No description provided for @mon.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get mon;
+
+  /// No description provided for @tue.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get tue;
+
+  /// No description provided for @wed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get wed;
+
+  /// No description provided for @thu.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get thu;
+
+  /// No description provided for @fri.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get fri;
+
+  /// No description provided for @sat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get sat;
+
+  /// No description provided for @january.
+  ///
+  /// In en, this message translates to:
+  /// **'January'**
+  String get january;
+
+  /// No description provided for @february.
+  ///
+  /// In en, this message translates to:
+  /// **'February'**
+  String get february;
+
+  /// No description provided for @march.
+  ///
+  /// In en, this message translates to:
+  /// **'March'**
+  String get march;
+
+  /// No description provided for @april.
+  ///
+  /// In en, this message translates to:
+  /// **'April'**
+  String get april;
+
+  /// No description provided for @may.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get may;
+
+  /// No description provided for @june.
+  ///
+  /// In en, this message translates to:
+  /// **'June'**
+  String get june;
+
+  /// No description provided for @july.
+  ///
+  /// In en, this message translates to:
+  /// **'July'**
+  String get july;
+
+  /// No description provided for @august.
+  ///
+  /// In en, this message translates to:
+  /// **'August'**
+  String get august;
+
+  /// No description provided for @september.
+  ///
+  /// In en, this message translates to:
+  /// **'September'**
+  String get september;
+
+  /// No description provided for @october.
+  ///
+  /// In en, this message translates to:
+  /// **'October'**
+  String get october;
+
+  /// No description provided for @november.
+  ///
+  /// In en, this message translates to:
+  /// **'November'**
+  String get november;
+
+  /// No description provided for @december.
+  ///
+  /// In en, this message translates to:
+  /// **'December'**
+  String get december;
+
+  /// No description provided for @selectDateAndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date & Time'**
+  String get selectDateAndTime;
+
+  /// No description provided for @selectTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Time'**
+  String get selectTime;
+
+  /// No description provided for @morning.
+  ///
+  /// In en, this message translates to:
+  /// **'Morning'**
+  String get morning;
+
+  /// No description provided for @afternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Afternoon'**
+  String get afternoon;
+
+  /// No description provided for @selectDateFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a date first'**
+  String get selectDateFirst;
+
+  /// No description provided for @statusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get statusConfirmed;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get statusCompleted;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @statusNoShow.
+  ///
+  /// In en, this message translates to:
+  /// **'No Show'**
+  String get statusNoShow;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noMessagesYet;
+
+  /// No description provided for @tapToStartChatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to start chatting'**
+  String get tapToStartChatting;
+
+  /// No description provided for @newLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get newLabel;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String minutesAgo(int count);
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String daysAgo(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

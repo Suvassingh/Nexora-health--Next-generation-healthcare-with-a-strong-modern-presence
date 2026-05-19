@@ -610,4 +610,119 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotifications => 'No notifications';
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get busy => 'Busy';
+
+  @override
+  String get sun => 'Sun';
+
+  @override
+  String get mon => 'Mon';
+
+  @override
+  String get tue => 'Tue';
+
+  @override
+  String get wed => 'Wed';
+
+  @override
+  String get thu => 'Thu';
+
+  @override
+  String get fri => 'Fri';
+
+  @override
+  String get sat => 'Sat';
+
+  @override
+  String get january => 'January';
+
+  @override
+  String get february => 'February';
+
+  @override
+  String get march => 'March';
+
+  @override
+  String get april => 'April';
+
+  @override
+  String get may => 'May';
+
+  @override
+  String get june => 'June';
+
+  @override
+  String get july => 'July';
+
+  @override
+  String get august => 'August';
+
+  @override
+  String get september => 'September';
+
+  @override
+  String get october => 'October';
+
+  @override
+  String get november => 'November';
+
+  @override
+  String get december => 'December';
+
+  @override
+  String get selectDateAndTime => 'Select Date & Time';
+
+  @override
+  String get selectTime => 'Select Time';
+
+  @override
+  String get morning => 'Morning';
+
+  @override
+  String get afternoon => 'Afternoon';
+
+  @override
+  String get selectDateFirst => 'Please select a date first';
+
+  @override
+  String get statusConfirmed => 'Confirmed';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusNoShow => 'No Show';
+
+  @override
+  String get noMessagesYet => 'No messages yet';
+
+  @override
+  String get tapToStartChatting => 'Tap to start chatting';
+
+  @override
+  String get newLabel => 'New';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String daysAgo(int count) {
+    return '${count}d ago';
+  }
 }

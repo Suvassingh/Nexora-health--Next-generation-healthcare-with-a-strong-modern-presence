@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 
 class AppointmentData {
   final String id;
@@ -40,29 +41,31 @@ class AppointmentData {
         : 'D';
   }
 
-  String get formattedTime {
+String formattedTime(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final h = scheduledAt.hour % 12 == 0 ? 12 : scheduledAt.hour % 12;
     final m = scheduledAt.minute.toString().padLeft(2, '0');
-    final ap = scheduledAt.hour < 12 ? 'बिहान' : 'दिउँसो';
+    final ap = scheduledAt.hour < 12 ? l.morning : l.afternoon;
     return '$ap $h:$m';
   }
 
-  String get formattedDate {
-    const months = [
-      'जनवरी',
-      'फेब्रुअरी',
-      'मार्च',
-      'अप्रिल',
-      'मे',
-      'जुन',
-      'जुलाई',
-      'अगस्ट',
-      'सेप्टेम्बर',
-      'अक्टोबर',
-      'नोभेम्बर',
-      'डिसेम्बर',
+String formattedDate(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final months = [
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
     ];
-    if (isToday) return 'आज, $formattedTime';
+    if (isToday) return '${l.today}, ${formattedTime(context)}';
     return '${scheduledAt.day} ${months[scheduledAt.month - 1]}';
   }
 
@@ -83,18 +86,19 @@ class AppointmentData {
     }
   }
 
-  String get statusLabel {
+String statusLabel(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     switch (status) {
       case 'confirmed':
-        return 'पुष्टि';
+        return l.statusConfirmed;
       case 'pending':
-        return 'पर्खाइ';
+        return l.statusPending;
       case 'completed':
-        return 'सम्पन्न';
+        return l.statusCompleted;
       case 'cancelled':
-        return 'रद्द';
+        return l.statusCancelled;
       case 'no_show':
-        return 'गैरहाजिर';
+        return l.statusNoShow;
       default:
         return status;
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:patient_app/app_constants.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/doctor_model.dart';
 import 'package:patient_app/widgets/image.dart';
 
@@ -133,7 +134,7 @@ class DoctorCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              'डा. ${doctor.name}',
+                             'Dr. ${doctor.name}',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -241,7 +242,10 @@ class DoctorCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    doctor.isAvailable ? 'Available' : 'Busy',
+                   doctor.isAvailable
+                        ? AppLocalizations.of(context)!.available
+                        : AppLocalizations.of(context)!.busy,
+
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,

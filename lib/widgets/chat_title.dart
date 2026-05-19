@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/chat_preview.dart';
 
 
@@ -15,6 +16,7 @@ class ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final appt = preview.appt;
     final hasConversation = preview.conversationId != null;
 
@@ -63,7 +65,8 @@ class ChatTile extends StatelessWidget {
           padding: const EdgeInsets.only(top: 3),
           child: Text(
             preview.lastMessage ??
-                (hasConversation ? 'No messages yet' : 'Tap to start chatting'),
+                (hasConversation ? l.noMessagesYet : l.tapToStartChatting),
+
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -80,7 +83,7 @@ class ChatTile extends StatelessWidget {
           children: [
             if (preview.lastMessageAt != null)
               Text(
-                _formatTime(preview.lastMessageAt!),
+                _formatTime(preview.lastMessageAt!, l),
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
             const SizedBox(height: 4),
@@ -91,8 +94,7 @@ class ChatTile extends StatelessWidget {
                   color: const Color(0xFF1565C0).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'New',
+              child: Text(l.newLabel,
                   style: TextStyle(
                     fontSize: 10,
                     color: Color(0xFF1565C0),
@@ -106,14 +108,14 @@ class ChatTile extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime dt) {
+  String _formatTime(DateTime dt,AppLocalizations l) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+     if (diff.inMinutes < 1) return l.justNow;
+    if (diff.inHours < 1) return l.minutesAgo(diff.inMinutes);
     if (diff.inDays < 1)
       return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 7) return l.daysAgo(diff.inDays);
     return '${dt.day}/${dt.month}';
   }
 }

@@ -610,4 +610,119 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get noNotifications => 'कुनै सूचना छैन';
+
+  @override
+  String get available => 'उपलब्ध';
+
+  @override
+  String get busy => 'व्यस्त';
+
+  @override
+  String get sun => 'आइत';
+
+  @override
+  String get mon => 'सोम';
+
+  @override
+  String get tue => 'मंगल';
+
+  @override
+  String get wed => 'बुध';
+
+  @override
+  String get thu => 'बिहि';
+
+  @override
+  String get fri => 'शुक्र';
+
+  @override
+  String get sat => 'शनि';
+
+  @override
+  String get january => 'जनवरी';
+
+  @override
+  String get february => 'फेब्रुअरी';
+
+  @override
+  String get march => 'मार्च';
+
+  @override
+  String get april => 'अप्रिल';
+
+  @override
+  String get may => 'मे';
+
+  @override
+  String get june => 'जुन';
+
+  @override
+  String get july => 'जुलाई';
+
+  @override
+  String get august => 'अगस्ट';
+
+  @override
+  String get september => 'सेप्टेम्बर';
+
+  @override
+  String get october => 'अक्टोबर';
+
+  @override
+  String get november => 'नोभेम्बर';
+
+  @override
+  String get december => 'डिसेम्बर';
+
+  @override
+  String get selectDateAndTime => 'मिति र समय छान्नुहोस्';
+
+  @override
+  String get selectTime => 'समय छान्नुहोस्';
+
+  @override
+  String get morning => 'बिहान';
+
+  @override
+  String get afternoon => 'दिउँसो';
+
+  @override
+  String get selectDateFirst => 'पहिले मिति छान्नुहोस्';
+
+  @override
+  String get statusConfirmed => 'पुष्टि';
+
+  @override
+  String get statusPending => 'पर्खाइ';
+
+  @override
+  String get statusCompleted => 'सम्पन्न';
+
+  @override
+  String get statusCancelled => 'रद्द';
+
+  @override
+  String get statusNoShow => 'गैरहाजिर';
+
+  @override
+  String get noMessagesYet => 'अहिलेसम्म कुनै सन्देश छैन';
+
+  @override
+  String get tapToStartChatting => 'कुराकानी सुरु गर्न थिच्नुहोस्';
+
+  @override
+  String get newLabel => 'नयाँ';
+
+  @override
+  String get justNow => 'अहिले मात्र';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count मिनेट अघि';
+  }
+
+  @override
+  String daysAgo(int count) {
+    return '$count दिन अघि';
+  }
 }
