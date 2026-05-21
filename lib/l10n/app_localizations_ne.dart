@@ -27,7 +27,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get signup => 'साइन अप';
 
   @override
-  String get bookAppointment => 'अपोइन्टमेन्ट बुक गर्नुहोस्';
+  String get bookAppointment => 'अपोइन्टमेन्ट\nबुक गर्नुहोस्';
 
   @override
   String get doctor => 'डाक्टर';
@@ -42,16 +42,16 @@ class AppLocalizationsNe extends AppLocalizations {
   String get name => 'पूरा नाम ';
 
   @override
-  String get phone => 'फोन';
+  String get phone => 'फोन नम्बर';
 
   @override
   String get age => 'उमेर ';
 
   @override
-  String get gender => 'लिङ्ग ';
+  String get gender => 'लिङ्ग';
 
   @override
-  String get address => 'ठेगाना ';
+  String get address => 'ठेगाना';
 
   @override
   String get alreadyhaveanaccount => 'पहिले नै खाता छ ?';
@@ -164,7 +164,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get chat => 'च्याट';
 
   @override
-  String get emergencyContact => 'आपतकालीन सम्पर्क';
+  String get emergencyContact => 'आपतकालीन\nसम्पर्क';
 
   @override
   String get numberLabel => 'नम्बर:';
@@ -725,4 +725,175 @@ class AppLocalizationsNe extends AppLocalizations {
   String daysAgo(int count) {
     return '$count दिन अघि';
   }
+
+  @override
+  String get couldNotLoadData => 'डेटा लोड गर्न सकिएन';
+
+  @override
+  String get fullName => 'पूरा नाम';
+
+  @override
+  String get verified => 'सत्यापित';
+
+  @override
+  String get ageAndDob => 'उमेर / जन्म मिति';
+
+  @override
+  String get bloodGroup => 'रगत समूह';
+
+  @override
+  String get select => 'छान्नुस्';
+
+  @override
+  String get medicalHistory => 'चिकित्सा इतिहास';
+
+  @override
+  String get add => 'थप्नुस्';
+
+  @override
+  String get noRecords => 'कुनै रेकर्ड छैन';
+
+  @override
+  String get addCondition => 'रोग थप्नुस्';
+
+  @override
+  String get conditionHint => 'जस्तै: Hypertension';
+
+  @override
+  String get settings => 'सेटिङ';
+
+  @override
+  String get language => 'भाषा / Language';
+
+  @override
+  String get nepali => 'नेपाली';
+
+  @override
+  String get lowDataMode => 'कम डेटा मोड';
+
+  @override
+  String get lowDataModeSubtitle => 'Low Data Mode';
+
+  @override
+  String get notLoggedIn => 'लगइन छैन';
+
+  @override
+  String get profileSaved => 'प्रोफाइल सुरक्षित गरियो ✓';
+
+  @override
+  String failedToSave(String error) {
+    return 'सुरक्षित गर्न सकिएन: $error';
+  }
+
+  @override
+  String get selectDateOfBirth => 'जन्म मिति छान्नुहोस्';
+
+  @override
+  String get appointmentCancelled => 'अपोइन्टमेन्ट रद्द गरियो।';
+
+  @override
+  String get noUpcomingAppointments => 'कुनै आउँदो अपोइन्टमेन्ट छैन';
+
+  @override
+  String get cancelAction => 'रद्द गर्नुहोस्';
+
+  @override
+  String get seeAll => 'सबै हेर्नुहोस्';
+
+  @override
+  String get noDoctorsAvailable => 'डाक्टर उपलब्ध छैनन्';
+
+  @override
+  String get home => 'गृह';
+
+  @override
+  String get appointment => 'अपोइन्टमेन्ट';
+
+  @override
+  String get profile => 'प्रोफाइल';
+
+  @override
+  String get viewYourHealthRecords => 'आफ्नो स्वास्थ्य रेकर्ड हेर्नुहोस्';
+
+  @override
+  String get activeAlerts => 'सक्रिय चेतावनीहरू';
+
+  @override
+  String get consultationHistory => 'परामर्श इतिहास';
+
+  @override
+  String get diagnosed => 'निदान गरिएको';
+
+  @override
+  String get followUp => 'फलो-अप';
+
+  @override
+  String get bloodPressure => 'रक्तचाप';
+
+  @override
+  String get heartRate => 'मुटुको धड्कन';
+
+  @override
+  String get temperature => 'तापक्रम';
+
+  @override
+  String get weight => 'तौल';
+
+  @override
+  String get latestVitals => 'हालैका जीवन संकेतहरू';
+
+  @override
+  String get allergies => 'एलर्जीहरू';
+
+  @override
+  String get conditions => 'स्वास्थ्य अवस्थाहरू';
+
+  @override
+  String get immunisations => 'खोपहरू';
+
+  @override
+  String get familyHistory => 'पारिवारिक स्वास्थ्य इतिहास';
+
+  @override
+  String get couldNotLoadRecord => 'रेकर्ड लोड गर्न सकिएन';
+
+  @override
+  String get prescriptions => 'प्रिस्क्रिप्सनहरू';
+
+  @override
+  String get noPrescriptions => 'अहिलेसम्म कुनै प्रिस्क्रिप्सन छैन।';
+
+  @override
+  String couldNotLoadPrescriptions(Object error) {
+    return 'प्रिस्क्रिप्सन लोड गर्न सकिएन: $error';
+  }
+
+  @override
+  String get prescription => 'प्रिस्क्रिप्सन';
+
+  @override
+  String get notes => 'टिप्पणीहरू';
+
+  @override
+  String get medicines => 'औषधिहरू';
+
+  @override
+  String get oneMedicine => '१ औषधि';
+
+  @override
+  String medicinesCount(Object count) {
+    return '$count औषधिहरू';
+  }
+
+  @override
+  String get followUpLabel => 'फलो-अप:';
+
+  @override
+  String get doctorTitle => 'डा.';
+
+  @override
+  String get unknownDoctor => 'अज्ञात डाक्टर';
+
+  @override
+  String get days => 'दिन';
 }

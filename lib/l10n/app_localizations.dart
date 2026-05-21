@@ -134,7 +134,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookAppointment.
   ///
   /// In en, this message translates to:
-  /// **'Book Appointment'**
+  /// **'Book\nAppointment'**
   String get bookAppointment;
 
   /// No description provided for @doctor.
@@ -344,7 +344,7 @@ abstract class AppLocalizations {
   /// No description provided for @totalConsultations.
   ///
   /// In en, this message translates to:
-  /// **'Total Consultations'**
+  /// **'Total'**
   String get totalConsultations;
 
   /// No description provided for @thisMonth.
@@ -362,7 +362,7 @@ abstract class AppLocalizations {
   /// No description provided for @thisWeekAppointments.
   ///
   /// In en, this message translates to:
-  /// **'This Week\'s Appointments'**
+  /// **'This Week'**
   String get thisWeekAppointments;
 
   /// No description provided for @findDoctor.
@@ -404,7 +404,7 @@ abstract class AppLocalizations {
   /// No description provided for @emergencyContact.
   ///
   /// In en, this message translates to:
-  /// **'Emergency Contact'**
+  /// **'Emergency\nContact'**
   String get emergencyContact;
 
   /// No description provided for @numberLabel.
@@ -458,7 +458,7 @@ abstract class AppLocalizations {
   /// No description provided for @logoutConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Do you want to logout?'**
+  /// **'Are you sure you want to logout?'**
   String get logoutConfirm;
 
   /// No description provided for @changePassword.
@@ -1510,6 +1510,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}d ago'**
   String daysAgo(int count);
+
+  /// No description provided for @couldNotLoadData.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load data'**
+  String get couldNotLoadData;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get fullName;
+
+  /// No description provided for @verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verified;
+
+  /// No description provided for @ageAndDob.
+  ///
+  /// In en, this message translates to:
+  /// **'Age / Date of Birth'**
+  String get ageAndDob;
+
+  /// No description provided for @bloodGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood Group'**
+  String get bloodGroup;
+
+  /// No description provided for @select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get select;
+
+  /// No description provided for @medicalHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical History'**
+  String get medicalHistory;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @noRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'No records found'**
+  String get noRecords;
+
+  /// No description provided for @addCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Condition'**
+  String get addCondition;
+
+  /// No description provided for @conditionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Hypertension'**
+  String get conditionHint;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language / भाषा'**
+  String get language;
+
+  /// No description provided for @nepali.
+  ///
+  /// In en, this message translates to:
+  /// **'Nepali'**
+  String get nepali;
+
+  /// No description provided for @lowDataMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Data Mode'**
+  String get lowDataMode;
+
+  /// No description provided for @lowDataModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Data Mode'**
+  String get lowDataModeSubtitle;
+
+  /// No description provided for @notLoggedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not logged in'**
+  String get notLoggedIn;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved ✓'**
+  String get profileSaved;
+
+  /// No description provided for @failedToSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save: {error}'**
+  String failedToSave(String error);
+
+  /// No description provided for @selectDateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date of Birth'**
+  String get selectDateOfBirth;
+
+  /// No description provided for @appointmentCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment cancelled.'**
+  String get appointmentCancelled;
+
+  /// No description provided for @noUpcomingAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming appointments'**
+  String get noUpcomingAppointments;
+
+  /// No description provided for @cancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelAction;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See All'**
+  String get seeAll;
+
+  /// No description provided for @noDoctorsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No doctors available'**
+  String get noDoctorsAvailable;
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @appointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment'**
+  String get appointment;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @viewYourHealthRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'View your health records'**
+  String get viewYourHealthRecords;
+
+  /// No description provided for @activeAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Alerts'**
+  String get activeAlerts;
+
+  /// No description provided for @consultationHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Consultation History'**
+  String get consultationHistory;
+
+  /// No description provided for @diagnosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnosed'**
+  String get diagnosed;
+
+  /// No description provided for @followUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow-up'**
+  String get followUp;
+
+  /// No description provided for @bloodPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood Pressure'**
+  String get bloodPressure;
+
+  /// No description provided for @heartRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart Rate'**
+  String get heartRate;
+
+  /// No description provided for @temperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperature;
+
+  /// No description provided for @weight.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get weight;
+
+  /// No description provided for @latestVitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Vitals'**
+  String get latestVitals;
+
+  /// No description provided for @allergies.
+  ///
+  /// In en, this message translates to:
+  /// **'Allergies'**
+  String get allergies;
+
+  /// No description provided for @conditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get conditions;
+
+  /// No description provided for @immunisations.
+  ///
+  /// In en, this message translates to:
+  /// **'Immunisations'**
+  String get immunisations;
+
+  /// No description provided for @familyHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Family History'**
+  String get familyHistory;
+
+  /// No description provided for @couldNotLoadRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load record'**
+  String get couldNotLoadRecord;
+
+  /// No description provided for @prescriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Prescriptions'**
+  String get prescriptions;
+
+  /// No description provided for @noPrescriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No prescriptions yet.'**
+  String get noPrescriptions;
+
+  /// No description provided for @couldNotLoadPrescriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load prescriptions: {error}'**
+  String couldNotLoadPrescriptions(Object error);
+
+  /// No description provided for @prescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prescription'**
+  String get prescription;
+
+  /// No description provided for @notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// No description provided for @medicines.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get medicines;
+
+  /// No description provided for @oneMedicine.
+  ///
+  /// In en, this message translates to:
+  /// **'1 medicine'**
+  String get oneMedicine;
+
+  /// No description provided for @medicinesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} medicines'**
+  String medicinesCount(Object count);
+
+  /// No description provided for @followUpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow-up:'**
+  String get followUpLabel;
+
+  /// No description provided for @doctorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dr.'**
+  String get doctorTitle;
+
+  /// No description provided for @unknownDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Doctor'**
+  String get unknownDoctor;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

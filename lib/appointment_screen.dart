@@ -5,6 +5,7 @@ import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/provider/appointment_provider.dart';
 import 'package:patient_app/provider/home_provider.dart';
 import 'package:patient_app/widgets/simmer.dart';
+import 'package:patient_app/widgets/voice_fab.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
 import 'package:patient_app/call_screen.dart';
@@ -273,7 +274,28 @@ Future<void> _handleJoin(Appt appt) async {
       );
     }
   }
+String _buildAppointmentVoiceText(List<Appt> all) {
+    final today = _filterList(all, 'today').length;
+    final upcoming = _filterList(all, 'upcoming').length;
+    final pending = _filterList(all, 'pending').length;
+    final completed = _filterList(all, 'completed').length;
 
+    final next = _filterList(all, 'today').isNotEmpty
+        ? _filterList(all, 'today').first
+        : _filterList(all, 'upcoming').isNotEmpty
+        ? _filterList(all, 'upcoming').first
+        : null;
+
+    final nextLine = next != null
+        ? 'Your next appointment is with Dr. ${next.doctorName} on ${next.dateTimeLabel}. '
+        : 'You have no upcoming confirmed appointments. ';
+
+    return '${nextLine}'
+        'Today: $today appointment${today == 1 ? "" : "s"}. '
+        'Upcoming: $upcoming. '
+        'Pending approval: $pending. '
+        'Completed: $completed.';
+  }
   @override
   Widget build(BuildContext context) {
     final apptAsync = ref.watch(appointmentsProvider);
@@ -316,15 +338,31 @@ Future<void> _handleJoin(Appt appt) async {
         },
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.to(() => const SimpleBookScreen())
-            ?.then((_) => ref.invalidate(appointmentsProvider)),
-        backgroundColor: AppConstants.primaryColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-       label: Text(AppLocalizations.of(context)!.newBook,
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+     floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+         
+          apptAsync.whenOrNull(
+                data: (all) => VoiceFab(text: _buildAppointmentVoiceText(all)),
+              ) ??
+              const SizedBox.shrink(),
+         
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'book_fab',
+            onPressed: () => Get.to(
+              () => const SimpleBookScreen(),
+            )?.then((_) => ref.invalidate(appointmentsProvider)),
+            backgroundColor: AppConstants.primaryColor,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(
+              AppLocalizations.of(context)!.newBook,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -27,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signup => 'Sign Up';
 
   @override
-  String get bookAppointment => 'Book Appointment';
+  String get bookAppointment => 'Book\nAppointment';
 
   @override
   String get doctor => 'Doctor';
@@ -134,7 +134,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookNewAppointmentHint => 'Press the button below to book a new appointment';
 
   @override
-  String get totalConsultations => 'Total Consultations';
+  String get totalConsultations => 'Total';
 
   @override
   String get thisMonth => 'This Month';
@@ -143,7 +143,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upcoming => 'Upcoming';
 
   @override
-  String get thisWeekAppointments => 'This Week\'s Appointments';
+  String get thisWeekAppointments => 'This Week';
 
   @override
   String get findDoctor => 'Find a Doctor';
@@ -164,7 +164,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chat => 'Chat';
 
   @override
-  String get emergencyContact => 'Emergency Contact';
+  String get emergencyContact => 'Emergency\nContact';
 
   @override
   String get numberLabel => 'Number:';
@@ -193,7 +193,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
-  String get logoutConfirm => 'Do you want to logout?';
+  String get logoutConfirm => 'Are you sure you want to logout?';
 
   @override
   String get changePassword => 'Change Password';
@@ -725,4 +725,175 @@ class AppLocalizationsEn extends AppLocalizations {
   String daysAgo(int count) {
     return '${count}d ago';
   }
+
+  @override
+  String get couldNotLoadData => 'Could not load data';
+
+  @override
+  String get fullName => 'Full Name';
+
+  @override
+  String get verified => 'Verified';
+
+  @override
+  String get ageAndDob => 'Age / Date of Birth';
+
+  @override
+  String get bloodGroup => 'Blood Group';
+
+  @override
+  String get select => 'Select';
+
+  @override
+  String get medicalHistory => 'Medical History';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get noRecords => 'No records found';
+
+  @override
+  String get addCondition => 'Add Condition';
+
+  @override
+  String get conditionHint => 'e.g. Hypertension';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get language => 'Language / भाषा';
+
+  @override
+  String get nepali => 'Nepali';
+
+  @override
+  String get lowDataMode => 'Low Data Mode';
+
+  @override
+  String get lowDataModeSubtitle => 'Low Data Mode';
+
+  @override
+  String get notLoggedIn => 'Not logged in';
+
+  @override
+  String get profileSaved => 'Profile saved ✓';
+
+  @override
+  String failedToSave(String error) {
+    return 'Could not save: $error';
+  }
+
+  @override
+  String get selectDateOfBirth => 'Select Date of Birth';
+
+  @override
+  String get appointmentCancelled => 'Appointment cancelled.';
+
+  @override
+  String get noUpcomingAppointments => 'No upcoming appointments';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get seeAll => 'See All';
+
+  @override
+  String get noDoctorsAvailable => 'No doctors available';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get appointment => 'Appointment';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get viewYourHealthRecords => 'View your health records';
+
+  @override
+  String get activeAlerts => 'Active Alerts';
+
+  @override
+  String get consultationHistory => 'Consultation History';
+
+  @override
+  String get diagnosed => 'Diagnosed';
+
+  @override
+  String get followUp => 'Follow-up';
+
+  @override
+  String get bloodPressure => 'Blood Pressure';
+
+  @override
+  String get heartRate => 'Heart Rate';
+
+  @override
+  String get temperature => 'Temperature';
+
+  @override
+  String get weight => 'Weight';
+
+  @override
+  String get latestVitals => 'Latest Vitals';
+
+  @override
+  String get allergies => 'Allergies';
+
+  @override
+  String get conditions => 'Conditions';
+
+  @override
+  String get immunisations => 'Immunisations';
+
+  @override
+  String get familyHistory => 'Family History';
+
+  @override
+  String get couldNotLoadRecord => 'Could not load record';
+
+  @override
+  String get prescriptions => 'Prescriptions';
+
+  @override
+  String get noPrescriptions => 'No prescriptions yet.';
+
+  @override
+  String couldNotLoadPrescriptions(Object error) {
+    return 'Could not load prescriptions: $error';
+  }
+
+  @override
+  String get prescription => 'Prescription';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get medicines => 'Medicines';
+
+  @override
+  String get oneMedicine => '1 medicine';
+
+  @override
+  String medicinesCount(Object count) {
+    return '$count medicines';
+  }
+
+  @override
+  String get followUpLabel => 'Follow-up:';
+
+  @override
+  String get doctorTitle => 'Dr.';
+
+  @override
+  String get unknownDoctor => 'Unknown Doctor';
+
+  @override
+  String get days => 'days';
 }

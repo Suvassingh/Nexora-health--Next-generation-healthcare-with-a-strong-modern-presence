@@ -7,14 +7,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/change_password.dart';
-import 'package:patient_app/controller/app_setting.dart';
+
 import 'package:patient_app/controller/profile_controller.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/login_screen.dart';
 import 'package:patient_app/models/patients_model.dart';
+import 'package:patient_app/patient_medical_history.dart';
 import 'package:patient_app/provider/home_provider.dart';
 import 'package:patient_app/provider/profile_provider.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
 import 'package:patient_app/widgets/simmer.dart';
+import 'package:patient_app/widgets/voice_fab.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'controller/local_controller.dart';
@@ -77,7 +80,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Future<void> _saveProfile() async {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) {
-      _showSnack('लगइन छैन', isError: true);
+      _showSnack(AppLocalizations.of(context)!.notLoggedIn, isError: true);
       return;
     }
     setState(() => _saving = true);
@@ -110,9 +113,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       });
       ref.invalidate(profileProvider);
       ref.invalidate(homeDataProvider);
-      _showSnack('प्रोफाइल सुरक्षित गरियो ✓');
+      _showSnack(AppLocalizations.of(context)!.profileSaved);
     } catch (e) {
-      _showSnack('सुरक्षित गर्न सकिएन: $e', isError: true);
+      _showSnack(AppLocalizations.of(context)!.profileSaved, isError: true);
     } finally {
       setState(() => _saving = false);
     }
@@ -129,7 +132,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       initialDate: _selectedDob ?? DateTime(now.year - 25),
       firstDate: DateTime(now.year - 120),
       lastDate: now,
-      helpText: 'जन्म मिति छान्नुहोस्',
+      helpText: AppLocalizations.of(context)!.selectDateOfBirth,
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
@@ -268,6 +271,27 @@ Widget _buildProfileShimmer() {
       ),
     );
   }
+  String _buildProfileVoiceText() {
+    final name = _nameCtrl.text.isNotEmpty ? _nameCtrl.text : 'Unknown';
+    final age = _cachedProfile?.ageInYears;
+    final gender = _selectedGender.isNotEmpty ? _selectedGender : 'unknown';
+    final blood = _selectedBloodGroup.isNotEmpty
+        ? _selectedBloodGroup
+        : 'not set';
+    final address = _addressCtrl.text.isNotEmpty
+        ? _addressCtrl.text
+        : 'not provided';
+    final conditionList = _conditions.isEmpty
+        ? 'no recorded conditions'
+        : _conditions.join(', ');
+
+    return 'Profile summary for $name. '
+        '${age != null ? "Age: $age years. " : ""}'
+        'Gender: $gender. '
+        'Blood group: $blood. '
+        'Address: $address. '
+        'Medical history: $conditionList.';
+  }
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
@@ -286,13 +310,13 @@ Widget _buildProfileShimmer() {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.grey),
               const SizedBox(height: 12),
-              Text('डेटा लोड गर्न सकिएन',
+              Text(AppLocalizations.of(context)!.couldNotLoadData,
                   style: TextStyle(color: Colors.grey.shade600)),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () => ref.invalidate(profileProvider),
                 icon: const Icon(Icons.refresh),
-                label: const Text('पुन: प्रयास'),
+                label:  Text(AppLocalizations.of(context)!.retry),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFB71C1C),
                   foregroundColor: Colors.white,
@@ -313,6 +337,9 @@ Widget _buildProfileShimmer() {
         return Scaffold(
           backgroundColor: const Color(0xFFF2F4F7),
           appBar: _buildAppBar(),
+          floatingActionButton: _editing
+              ? null 
+              : VoiceFab(text: _buildProfileVoiceText()),
           body: Column(
             children: [
               Expanded(
@@ -373,11 +400,11 @@ Widget _buildProfileShimmer() {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child:  Row(
               children: [
                 Icon(Icons.edit, size: 14, color: Colors.white),
                 SizedBox(width: 4),
-                Text('सम्पादन',
+                Text(AppLocalizations.of(context)!.edit,
                     style: TextStyle(
                         fontSize: 12,
                         color: Colors.white,
@@ -398,7 +425,7 @@ Widget _buildProfileShimmer() {
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('रद्द',
+                child:  Text(AppLocalizations.of(context)!.cancel,
                     style: TextStyle(fontSize: 12, color: Colors.white)),
               ),
             ),
@@ -418,7 +445,7 @@ Widget _buildProfileShimmer() {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Color(0xFFB71C1C)),
                 )
-                    : const Text('सुरक्षित',
+                    :  Text(AppLocalizations.of(context)!.save,
                     style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFFB71C1C),
@@ -483,7 +510,8 @@ Widget _buildProfileShimmer() {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _editing
-                        ? _inputField(_nameCtrl, hint: 'पूरा नाम')
+                        ? _inputField(_nameCtrl, hint: AppLocalizations.of(context)!.fullName,
+                          )
                         : Text(
                       _nameCtrl.text.isNotEmpty ? _nameCtrl.text : '—',
                       style: const TextStyle(
@@ -494,7 +522,7 @@ Widget _buildProfileShimmer() {
                     const SizedBox(height: 3),
                     _editing
                         ? _inputField(_phoneCtrl,
-                        hint: 'फोन नम्बर', keyboardType: TextInputType.phone)
+                        hint: AppLocalizations.of(context)!.phone, keyboardType: TextInputType.phone)
                         : Text(
                       _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : '—',
                       style: const TextStyle(fontSize: 13, color: Colors.grey),
@@ -511,7 +539,7 @@ Widget _buildProfileShimmer() {
                           const Icon(Icons.verified,
                               size: 14, color: Color(0xFF2E7D32)),
                           const SizedBox(width: 4),
-                          Text('सत्यापित',
+                          Text(AppLocalizations.of(context)!.verified,
                               style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.green.shade700,
@@ -532,7 +560,7 @@ Widget _buildProfileShimmer() {
                     ? GestureDetector(
                   onTap: _pickDateOfBirth,
                   child: _styledBox(
-                    label: 'जन्म मिति',
+                    label:AppLocalizations.of(context)!.dateOfBirth,
                     editing: true,
                     child: Row(
                       children: [
@@ -550,7 +578,7 @@ Widget _buildProfileShimmer() {
                   ),
                 )
                     : _infoBox(
-                  label: 'उमेर / जन्म मिति',
+                  label: AppLocalizations.of(context)!.ageAndDob,
                   value: age != null ? '$age वर्ष  ($dobStr)' : dobStr,
                 ),
               ),
@@ -558,7 +586,7 @@ Widget _buildProfileShimmer() {
               Expanded(
                 child: _editing
                     ? _styledBox(
-                  label: 'लिङ्ग',
+                  label: AppLocalizations.of(context)!.gender,
                   editing: true,
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -579,7 +607,7 @@ Widget _buildProfileShimmer() {
                   ),
                 )
                     : _infoBox(
-                  label: 'लिङ्ग',
+                  label: AppLocalizations.of(context)!.gender,
                   value: _selectedGender.isNotEmpty ? _selectedGender : '—',
                 ),
               ),
@@ -591,7 +619,7 @@ Widget _buildProfileShimmer() {
               Expanded(
                 child: _editing
                     ? _styledBox(
-                  label: 'ठेगाना',
+                  label: AppLocalizations.of(context)!.address,
                   editing: true,
                   child: TextField(
                     controller: _addressCtrl,
@@ -607,7 +635,7 @@ Widget _buildProfileShimmer() {
                   ),
                 )
                     : _infoBox(
-                  label: 'ठेगाना',
+                  label: AppLocalizations.of(context)!.address,
                   value: _addressCtrl.text.isNotEmpty ? _addressCtrl.text : '—',
                 ),
               ),
@@ -615,14 +643,15 @@ Widget _buildProfileShimmer() {
               Expanded(
                 child: _editing
                     ? _styledBox(
-                  label: 'रगत समूह',
+                  label: AppLocalizations.of(context)!.bloodGroup,
                   editing: true,
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _bloodGroupOptions.contains(_selectedBloodGroup)
                           ? _selectedBloodGroup
                           : null,
-                      hint: const Text('छान्नुस्',
+                      hint:  Text(AppLocalizations.of(context)!.select
+,
                           style: TextStyle(fontSize: 14, color: Colors.grey)),
                       isDense: true,
                       isExpanded: true,
@@ -638,7 +667,7 @@ Widget _buildProfileShimmer() {
                   ),
                 )
                     : _infoBox(
-                  label: 'रगत समूह',
+                  label: AppLocalizations.of(context)!.bloodGroup,
                   value: _selectedBloodGroup.isNotEmpty ? _selectedBloodGroup : '—',
                 ),
               ),
@@ -695,99 +724,54 @@ Widget _buildProfileShimmer() {
     ),
   );
 
-  Widget _buildMedicalHistoryCard() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 2)),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                  color: const Color(0xFFFCE4EC),
-                  borderRadius: BorderRadius.circular(8)),
-              child: const Text('🩺', style: TextStyle(fontSize: 16)),
-            ),
-            const SizedBox(width: 10),
-            const Text('चिकित्सा इतिहास',
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A))),
-            const Spacer(),
-            if (_editing)
-              GestureDetector(
-                onTap: _showAddConditionDialog,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFFFCE4EC),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.add, size: 14, color: Color(0xFFB71C1C)),
-                      SizedBox(width: 3),
-                      Text('थप्नुस्',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFB71C1C),
-                              fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        if (_conditions.isEmpty)
-          const Text('कुनै रेकर्ड छैन',
-              style: TextStyle(fontSize: 13, color: Colors.grey))
-        else
-          ...List.generate(
-            _conditions.length,
-                (i) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 5),
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        color: Color(0xFFB71C1C), shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(_conditions[i],
-                        style: const TextStyle(
-                            fontSize: 13.5,
-                            color: Color(0xFF333333),
-                            height: 1.4)),
-                  ),
-                  if (_editing)
-                    GestureDetector(
-                      onTap: () => setState(() => _conditions.removeAt(i)),
-                      child: const Icon(Icons.close, size: 16, color: Colors.grey),
-                    ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
+ Widget _buildMedicalHistoryCard() => GestureDetector(
+     onTap: () => Get.to(() => const PatientMedicalHistoryScreen()),
+     child: Container(
+       padding: const EdgeInsets.all(16),
+       decoration: BoxDecoration(
+         color: Colors.white,
+         borderRadius: BorderRadius.circular(16),
+         boxShadow: [
+           BoxShadow(
+               color: Colors.black.withOpacity(0.06),
+               blurRadius: 10,
+               offset: const Offset(0, 2)),
+         ],
+       ),
+       child: Row(
+         children: [
+           Container(
+             padding: const EdgeInsets.all(6),
+             decoration: BoxDecoration(
+                 color: const Color(0xFFFCE4EC),
+                 borderRadius: BorderRadius.circular(8)),
+             child: const Text('🩺', style: TextStyle(fontSize: 16)),
+           ),
+           const SizedBox(width: 10),
+           Expanded(
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Text(
+                   AppLocalizations.of(context)!.medicalHistory,
+                   style: const TextStyle(
+                       fontSize: 15,
+                       fontWeight: FontWeight.bold,
+                       color: Color(0xFF1A1A1A)),
+                 ),
+                 const SizedBox(height: 2),
+                 Text(
+                   AppLocalizations.of(context)!.viewYourHealthRecords,
+                   style: const TextStyle(fontSize: 12, color: Colors.grey),
+                 ),
+               ],
+             ),
+           ),
+           const Icon(Icons.chevron_right, color: Colors.grey, size: 22),
+         ],
+       ),
+     ),
+   );
 
   void _showAddConditionDialog() {
     _conditionCtrl.clear();
@@ -795,13 +779,13 @@ Widget _buildProfileShimmer() {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('रोग थप्नुस्',
+        title:  Text(AppLocalizations.of(context)!.addCondition,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: _conditionCtrl,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'जस्तै: Hypertension',
+            hintText: AppLocalizations.of(context)!.conditionHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -812,7 +796,8 @@ Widget _buildProfileShimmer() {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द', style: TextStyle(color: Colors.grey)),
+            child:  Text(
+              AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -824,7 +809,7 @@ Widget _buildProfileShimmer() {
               backgroundColor: const Color(0xFFB71C1C),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('थप्नुस्', style: TextStyle(color: Colors.white)),
+            child:  Text(AppLocalizations.of(context)!.add, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -856,7 +841,8 @@ Widget _buildProfileShimmer() {
                 child: const Text('⚙️', style: TextStyle(fontSize: 16)),
               ),
               const SizedBox(width: 10),
-              const Text('सेटिङ',
+               Text(
+                AppLocalizations.of(context)!.settings,
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -877,16 +863,18 @@ Widget _buildProfileShimmer() {
                 child: const Icon(Icons.language, size: 18, color: Color(0xFF1565C0)),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('भाषा / Language',
+                    Text(
+                      AppLocalizations.of(context)!.language,
                         style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF1A1A1A))),
-                    Text('नेपाली',
+                    Text(
+                      AppLocalizations.of(context)!.nepali,
                         style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
@@ -905,41 +893,41 @@ Widget _buildProfileShimmer() {
         ),
         const Divider(
             height: 1, indent: 16, endIndent: 16, color: Color(0xFFF0F0F0)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.data_saver_on, size: 18, color: Color(0xFF2E7D32)),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('कम डेटा मोड',
-                        style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A1A1A))),
-                    Text('Low Data Mode',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              CupertinoSwitch(
-                value: AppSettings.of(context).lowDataMode,
-                onChanged: (val) =>
-                    AppSettings.of(context).setLowDataMode(val),
-                activeTrackColor: const Color(0xFFB71C1C),
-              ),
-            ],
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        //   child: Row(
+        //     children: [
+        //       Container(
+        //         padding: const EdgeInsets.all(7),
+        //         decoration: BoxDecoration(
+        //             color: const Color(0xFFE8F5E9),
+        //             borderRadius: BorderRadius.circular(8)),
+        //         child: const Icon(Icons.data_saver_on, size: 18, color: Color(0xFF2E7D32)),
+        //       ),
+        //       const SizedBox(width: 12),
+        //       // const Expanded(
+        //       //   child: Column(
+        //       //     crossAxisAlignment: CrossAxisAlignment.start,
+        //       //     children: [
+        //       //       Text('कम डेटा मोड',
+        //       //           style: TextStyle(
+        //       //               fontSize: 13.5,
+        //       //               fontWeight: FontWeight.w600,
+        //       //               color: Color(0xFF1A1A1A))),
+        //       //       Text('Low Data Mode',
+        //       //           style: TextStyle(fontSize: 12, color: Colors.grey)),
+        //       //     ],
+        //       //   ),
+        //       // ),
+        //       // CupertinoSwitch(
+        //       //   value: AppSettings.of(context).lowDataMode,
+        //       //   onChanged: (val) =>
+        //       //       AppSettings.of(context).setLowDataMode(val),
+        //       //   activeTrackColor: const Color(0xFFB71C1C),
+        //       // ),
+        //     ],
+        //   ),
+        // ),
         const Divider(
             height: 1, indent: 16, endIndent: 16, color: Color(0xFFF0F0F0)),
         InkWell(
@@ -960,8 +948,9 @@ Widget _buildProfileShimmer() {
                   child: const Icon(Icons.lock_outline, size: 18, color: Color(0xFF7B1FA2)),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
-                  child: Text('पासवर्ड परिवर्तन गर्नुहोस्',
+                 Expanded(
+                  child: Text(
+                    AppLocalizations.of(context)!.changePassword,
                       style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
@@ -981,7 +970,8 @@ Widget _buildProfileShimmer() {
     child: OutlinedButton.icon(
       onPressed: _confirmLogout,
       icon: const Icon(Icons.logout, size: 18, color: Color(0xFFB71C1C)),
-      label: const Text('लगआउट / Logout',
+      label:  Text(
+        AppLocalizations.of(context)!.logout,
           style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -1000,13 +990,15 @@ Widget _buildProfileShimmer() {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('लगआउट',
+        title:  Text(
+          AppLocalizations.of(context)!.logout,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: const Text('के तपाईं लगआउट गर्न चाहनुहुन्छ?'),
+        content:  Text(AppLocalizations.of(context)!.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('रद्द', style: TextStyle(color: Colors.grey)),
+            child:  Text(
+              AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1021,7 +1013,8 @@ Widget _buildProfileShimmer() {
               backgroundColor: const Color(0xFFB71C1C),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('लगआउट', style: TextStyle(color: Colors.white)),
+            child:  Text(
+              AppLocalizations.of(context)!.logout, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

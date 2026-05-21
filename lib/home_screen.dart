@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/appointment_screen.dart';
+import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/profile_page.dart';
 import 'package:patient_app/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -46,11 +47,23 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Colors.redAccent,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.date_range), label: 'Appointment'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items:  [
+         BottomNavigationBarItem(
+            icon: const Icon(Icons.home),
+            label: AppLocalizations.of(context)!.home,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.date_range),
+            label: AppLocalizations.of(context)!.appointment,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.chat),
+            label: AppLocalizations.of(context)!.chat,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.profile,
+          ),
         ],
       ),
     );

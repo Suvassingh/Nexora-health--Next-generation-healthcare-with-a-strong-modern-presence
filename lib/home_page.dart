@@ -13,6 +13,7 @@ import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/widgets/appointment_data.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
 import 'package:patient_app/widgets/simmer.dart';
+import 'package:patient_app/widgets/voice_fab.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/appointment_screen.dart';
@@ -36,7 +37,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Wire realtime notification stream → provider
+  
     _notifSub = NotificationService.instance.inAppStream.listen((n) {
       ref.read(notificationProvider.notifier).addNew(n);
     });
@@ -47,39 +48,41 @@ class _HomePageState extends ConsumerState<HomePage> {
     _notifSub?.cancel();
     super.dispose();
   }
-  Future<void> _cancelAppointment(String appointmentId,
-      String doctorName,) async {
+
+  Future<void> _cancelAppointment(
+    String appointmentId,
+    String doctorName,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) =>
-          AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            title: Text(AppLocalizations.of(context)!.cancelAppointmentTitle,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-           content: Text(AppLocalizations.of(context)!.cancelAppointmentConfirm(doctorName),
-              style: const TextStyle(fontSize: 14),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-               child: Text(AppLocalizations.of(context)!.no),
-
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB71C1C),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(AppLocalizations.of(context)!.cancelConfirmBtn),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          AppLocalizations.of(context)!.cancelAppointmentTitle,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.cancelAppointmentConfirm(doctorName),
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context)!.no),
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFB71C1C),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(AppLocalizations.of(context)!.cancelConfirmBtn),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
 
@@ -87,8 +90,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       await ApiService.cancelAppointment(appointmentId);
       Get.snackbar(
-        'सफल',
-        'अपोइन्टमेन्ट रद्द गरियो।',
+        AppLocalizations.of(context)!.success,
+        AppLocalizations.of(context)!.appointmentCancelled,
         backgroundColor: Colors.green.shade50,
         colorText: Colors.green.shade800,
         snackPosition: SnackPosition.BOTTOM,
@@ -100,7 +103,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.invalidate(homeDataProvider);
     } catch (e) {
       Get.snackbar(
-        'त्रुटि',
+        AppLocalizations.of(context)!.error,
         e.toString(),
         backgroundColor: Colors.red.shade50,
         colorText: Colors.red.shade800,
@@ -114,8 +117,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // ignore: unused_element
-  AppointmentData? _parseAppointment(Map<String, dynamic> m,
-      Map<String, dynamic> doctorData,) {
+  AppointmentData? _parseAppointment(
+    Map<String, dynamic> m,
+    Map<String, dynamic> doctorData,
+  ) {
     try {
       return AppointmentData(
         id: m['id']?.toString() ?? '',
@@ -132,7 +137,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-// WITH THIS:
   String _greeting(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final h = DateTime.now().hour;
@@ -141,7 +145,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     return l10n.goodEvening;
   }
 
-
   @override
   Widget build(BuildContext context) {
     final homeAsync = ref.watch(homeDataProvider);
@@ -149,15 +152,30 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: _buildAppBar(),
+      floatingActionButton: homeAsync.whenOrNull(
+      data: (data) {
+        final firstName = _getFirstName(data.profile);
+        final next = data.nextAppointment;
+        final voiceText = next != null
+            ? '${_greeting(context)} $firstName. '
+              'तपाईंको अर्को अपोइन्टमेन्ट डा. ${next.doctorName} सँग '
+              '${next.formattedDate} मा छ। '
+              'तपाईंका जम्मा ${data.stats.total} परामर्श छन्, '
+              '${data.stats.pending} आउँदो छ।'
+            : '${_greeting(context)} $firstName. '
+              'आज कुनै आउँदो अपोइन्टमेन्ट छैन। '
+              'तपाईंका जम्मा ${data.stats.total} परामर्श छन्।';
+        return VoiceFab(text: voiceText);
+      },
+    ),
       body: homeAsync.when(
         loading: () => _buildShimmer(),
         error: (e, _) =>
             _buildError(e.toString(), () => ref.invalidate(homeDataProvider)),
-        data: (data) =>
-            RefreshIndicator(
-              onRefresh: () async => ref.invalidate(homeDataProvider),
-              child: _buildHomeContent(data),
-            ),
+        data: (data) => RefreshIndicator(
+          onRefresh: () async => ref.invalidate(homeDataProvider),
+          child: _buildHomeContent(data),
+        ),
       ),
     );
   }
@@ -196,7 +214,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-PreferredSizeWidget _buildAppBar() => AppBar(
+  PreferredSizeWidget _buildAppBar() => AppBar(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
     ),
@@ -231,7 +249,6 @@ PreferredSizeWidget _buildAppBar() => AppBar(
       ],
     ),
     actions: [
-
       Padding(
         padding: const EdgeInsets.only(right: 12),
         child: Consumer(
@@ -279,6 +296,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
       const SizedBox(width: 4),
 
       const LanguageToggleButton(),
+      const SizedBox(width: 8),
     ],
   );
   String _getFirstName(PatientProfile profile) {
@@ -286,6 +304,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
     final name = profile.fullName ?? '';
     return name.split(' ').first;
   }
+
   Widget _buildGreeting(PatientProfile profile) {
     final firstName = _getFirstName(profile);
 
@@ -300,7 +319,7 @@ PreferredSizeWidget _buildAppBar() => AppBar(
                   style: const TextStyle(color: Color(0xFF1A1A1A)),
                   children: [
                     TextSpan(
-text: '${_greeting(context)}, $firstName ',
+                      text: '${_greeting(context)}, $firstName ',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -322,7 +341,7 @@ text: '${_greeting(context)}, $firstName ',
                 radius: 22,
                 backgroundColor: AppConstants.primaryColor.withOpacity(0.12),
                 child: Text(
-                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U', 
+                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
                   style: TextStyle(
                     color: AppConstants.primaryColor,
                     fontWeight: FontWeight.bold,
@@ -340,13 +359,14 @@ text: '${_greeting(context)}, $firstName ',
       ],
     );
   }
+
   Widget _buildActionCards() => Row(
     children: [
       Expanded(
         child: _ActionCard(
           icon: Icons.calendar_today_rounded,
-          titleNe: 'अपोइन्टमेन्ट\nबुक गर्नुहोस्',
-          titleEn: 'Book Appointment',
+          label: AppLocalizations.of(context)!.bookAppointment,
+
           color: AppConstants.primaryColor,
           onTap: () => Get.to(() => const SimpleBookScreen()),
         ),
@@ -355,8 +375,8 @@ text: '${_greeting(context)}, $firstName ',
       Expanded(
         child: _ActionCard(
           icon: Icons.emergency_rounded,
-          titleNe: 'आपतकालीन\nसम्पर्क',
-          titleEn: 'Emergency Contact',
+          label: AppLocalizations.of(context)!.emergencyContact,
+
           color: const Color(0xFFB71C1C),
           onTap: () => Get.to(() => EmergencyCallscreen()),
         ),
@@ -387,8 +407,8 @@ text: '${_greeting(context)}, $firstName ',
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
               child: Row(
                 children: [
-                  const Text(
-                    'आउँदो अपोइन्टमेन्ट',
+                  Text(
+                    AppLocalizations.of(context)!.upcomingAppointment,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -406,7 +426,7 @@ text: '${_greeting(context)}, $firstName ',
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      a.statusLabel (context),
+                      a.statusLabel(context),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -465,7 +485,7 @@ text: '${_greeting(context)}, $firstName ',
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              a.formattedDate (context),
+                              a.formattedDate(context),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppConstants.primaryColor,
@@ -551,9 +571,9 @@ text: '${_greeting(context)}, $firstName ',
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'रद्द',
-                              style: TextStyle(fontSize: 13),
+                            child: Text(
+                              AppLocalizations.of(context)!.cancel,
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                 ],
@@ -592,8 +612,8 @@ text: '${_greeting(context)}, $firstName ',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'कुनै आउँदो अपोइन्टमेन्ट छैन',
+              Text(
+                AppLocalizations.of(context)!.noUpcomingAppointments,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -602,7 +622,7 @@ text: '${_greeting(context)}, $firstName ',
               ),
               const SizedBox(height: 4),
               Text(
-                'नयाँ अपोइन्टमेन्ट बुक गर्न तलको बटन थिच्नुहोस्',
+                AppLocalizations.of(context)!.bookNewAppointmentHint,
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
               ),
             ],
@@ -616,8 +636,8 @@ text: '${_greeting(context)}, $firstName ',
               color: AppConstants.primaryColor,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Text(
-              'बुक',
+            child: Text(
+              AppLocalizations.of(context)!.book,
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -634,19 +654,19 @@ text: '${_greeting(context)}, $firstName ',
     children: [
       _StatCard(
         value: '${stats.total}',
-        label: 'कुल परामर्श',
+        label: AppLocalizations.of(context)!.totalConsultations,
         color: AppConstants.primaryColor,
       ),
       const SizedBox(width: 12),
       _StatCard(
         value: '${stats.thisMonth}',
-        label: 'यो महिना',
+        label: AppLocalizations.of(context)!.thisMonth,
         color: const Color(0xFF1565C0),
       ),
       const SizedBox(width: 12),
       _StatCard(
         value: '${stats.pending}',
-        label: 'आउँदो',
+        label: AppLocalizations.of(context)!.upcoming,
         color: const Color(0xFFE65100),
       ),
     ],
@@ -658,8 +678,8 @@ text: '${_greeting(context)}, $firstName ',
       children: [
         Row(
           children: [
-            const Text(
-              'यो हप्ता अपोइन्टमेन्ट',
+            Text(
+              AppLocalizations.of(context)!.thisWeekAppointments,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -790,7 +810,7 @@ text: '${_greeting(context)}, $firstName ',
                   : GestureDetector(
                       onTap: () => _cancelAppointment(id, doctorName),
                       child: Text(
-                        'रद्द गर्नुहोस्',
+                        AppLocalizations.of(context)!.cancelAction,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.red.shade600,
@@ -810,8 +830,8 @@ text: '${_greeting(context)}, $firstName ',
       children: [
         Row(
           children: [
-            const Text(
-              'डाक्टर खोज्नुहोस्',
+            Text(
+              AppLocalizations.of(context)!.findDoctor,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -822,7 +842,7 @@ text: '${_greeting(context)}, $firstName ',
             GestureDetector(
               onTap: () => Get.to(() => const SimpleBookScreen()),
               child: Text(
-                'सबै हेर्नुहोस्',
+                AppLocalizations.of(context)!.seeAll,
                 style: TextStyle(
                   fontSize: 12,
                   color: AppConstants.primaryColor,
@@ -843,7 +863,7 @@ text: '${_greeting(context)}, $firstName ',
             ),
             child: Center(
               child: Text(
-                'डाक्टर उपलब्ध छैनन्',
+                AppLocalizations.of(context)!.noDoctorsAvailable,
                 style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
               ),
             ),
@@ -915,8 +935,8 @@ text: '${_greeting(context)}, $firstName ',
                 color: AppConstants.primaryColor,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
-                'बुक',
+              child: Text(
+                AppLocalizations.of(context)!.book,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -932,8 +952,8 @@ text: '${_greeting(context)}, $firstName ',
 
   Widget _buildRecentHeader() => Row(
     children: [
-      const Text(
-        'हालका अपोइन्टमेन्ट',
+      Text(
+        AppLocalizations.of(context)!.recentAppointments,
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -944,7 +964,7 @@ text: '${_greeting(context)}, $firstName ',
       GestureDetector(
         onTap: () => Get.to(() => AppointmentsScreen()),
         child: Text(
-          'सबै हेर्नुहोस्',
+          AppLocalizations.of(context)!.seeAll,
           style: TextStyle(
             fontSize: 12,
             color: AppConstants.primaryColor,
@@ -1049,7 +1069,7 @@ text: '${_greeting(context)}, $firstName ',
                   : GestureDetector(
                       onTap: () => _cancelAppointment(a.id, a.doctorName),
                       child: Text(
-                        'रद्द',
+                        AppLocalizations.of(context)!.cancel,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.red.shade600,
@@ -1077,7 +1097,7 @@ text: '${_greeting(context)}, $firstName ',
           Icon(Icons.history_rounded, size: 40, color: Colors.grey.shade200),
           const SizedBox(height: 10),
           Text(
-            'अहिलेसम्म कुनै अपोइन्टमेन्ट छैन',
+            AppLocalizations.of(context)!.noAppointmentsYet,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
           ),
         ],
@@ -1085,7 +1105,7 @@ text: '${_greeting(context)}, $firstName ',
     ),
   );
 
-Widget _buildShimmer() {
+  Widget _buildShimmer() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -1136,9 +1156,8 @@ Widget _buildShimmer() {
               scrollDirection: Axis.horizontal,
               itemCount: 3,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder:
-                  (_, __) =>
-                      const ShimmerBox(width: 190, height: 110, radius: 14),
+              itemBuilder: (_, __) =>
+                  const ShimmerBox(width: 190, height: 110, radius: 14),
             ),
           ),
           const SizedBox(height: 24),
@@ -1181,14 +1200,14 @@ Widget _buildShimmer() {
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('पुन: प्रयास गर्नुहोस्'),
+            label: Text(AppLocalizations.of(context)!.retry),
           ),
         ],
       ),
     );
   }
 
-  String _consultTypeLabel(String type, BuildContext  context) {
+  String _consultTypeLabel(String type, BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     switch (type) {
       case 'video':
@@ -1203,13 +1222,12 @@ Widget _buildShimmer() {
 
 class _ActionCard extends StatelessWidget {
   final IconData icon;
-  final String titleNe, titleEn;
+  final String label;
   final Color color;
   final VoidCallback onTap;
   const _ActionCard({
     required this.icon,
-    required this.titleNe,
-    required this.titleEn,
+    required this.label,
     required this.color,
     required this.onTap,
   });
@@ -1243,7 +1261,7 @@ class _ActionCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            titleNe,
+            label,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -1253,7 +1271,7 @@ class _ActionCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            titleEn,
+            label,
             style: TextStyle(
               color: Colors.white.withOpacity(0.8),
               fontSize: 11,
