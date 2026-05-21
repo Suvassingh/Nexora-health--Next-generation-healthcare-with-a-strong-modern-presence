@@ -11,6 +11,7 @@ import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/appointment_model.dart';
 import 'package:patient_app/services/encryption_service.dart';
 import 'package:patient_app/widgets/message_bubble.dart';
+import 'package:patient_app/widgets/simmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -422,7 +423,58 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _sending = false);
     }
   }
-
+Widget _buildChatShimmer() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: 6,
+      itemBuilder:
+          (_, __) => Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Avatar
+                const ShimmerBox(width: 50, height: 50, radius: 25),
+                const SizedBox(width: 12),
+                // Name + preview
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      ShimmerBox(width: 140, height: 14, radius: 5),
+                      SizedBox(height: 8),
+                      ShimmerBox(height: 12, radius: 4),
+                      SizedBox(height: 4),
+                      ShimmerBox(width: 80, height: 10, radius: 4),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Time + badge
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: const [
+                    ShimmerBox(width: 36, height: 10, radius: 4),
+                    SizedBox(height: 8),
+                    ShimmerBox(width: 20, height: 20, radius: 10),
+                  ],
+                ),
+              ],
+            ),
+          ),
+    );
+  }
   //  BUILD METHOD
 
   @override
@@ -436,9 +488,7 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: AppConstants.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: _loading ? _buildChatShimmer() : Column(
               children: [
                 Expanded(
                   child: ListView.builder(

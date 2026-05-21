@@ -14,7 +14,10 @@ import 'package:patient_app/models/patients_model.dart';
 import 'package:patient_app/provider/home_provider.dart';
 import 'package:patient_app/provider/profile_provider.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
+import 'package:patient_app/widgets/simmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'controller/local_controller.dart';
 
 const _genderOptions = ['male', 'female', 'other'];
 const _bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -28,7 +31,10 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _service = PatientService();
-
+  final LocaleController _localeCtrl = Get.put(
+    LocaleController(),
+    permanent: true,
+  );
   bool _saving = false;
   bool _editing = false;
 
@@ -64,6 +70,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _selectedBloodGroup = p?.bloodGroup ?? '';
     _selectedDob = p?.dateOfBirth;
     _conditions = List<String>.from(p?.conditions ?? []);
+    final lang = p?.preferredLanguage ?? 'english';
+    _localeCtrl.setLocale(lang == 'nepali' ? 'np' : 'en');
   }
 
   Future<void> _saveProfile() async {
@@ -74,6 +82,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
     setState(() => _saving = true);
     try {
+      final lang = _localeCtrl.locale == 'np' ? 'nepali' : 'english';
       final updated = PatientProfile(
         id: _cachedProfile?.id ?? '',
         userId: uid,
@@ -87,12 +96,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         conditions: List<String>.from(_conditions),
         avatar: '',
       );
-      await _service.saveProfile(updated);
+      // Save profile and language preference in parallel
+      await Future.wait([
+        _service.saveProfile(updated),
+        Supabase.instance.client
+            .from('user_profiles')
+            .update({'preferred_language': lang})
+            .eq('id', uid),
+      ]);
       setState(() {
         _cachedProfile = updated;
         _editing = false;
       });
-      // Invalidate both providers to refresh UI
       ref.invalidate(profileProvider);
       ref.invalidate(homeDataProvider);
       _showSnack('प्रोफाइल सुरक्षित गरियो ✓');
@@ -102,7 +117,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       setState(() => _saving = false);
     }
   }
-
   void _cancelEdit() {
     _applyProfile(_cachedProfile);
     setState(() => _editing = false);
@@ -140,17 +154,129 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ),
     );
   }
+Widget _buildProfileShimmer() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Profile card shimmer
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const ShimmerBox(
+                      width: 72,
+                      height: 72,
+                      radius: 36,
+                    ), // avatar
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          ShimmerBox(width: 160, height: 18, radius: 6),
+                          SizedBox(height: 8),
+                          ShimmerBox(width: 110, height: 14, radius: 5),
+                          SizedBox(height: 8),
+                          ShimmerBox(width: 80, height: 12, radius: 4),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Expanded(child: ShimmerBox(height: 58, radius: 10)),
+                    SizedBox(width: 10),
+                    Expanded(child: ShimmerBox(height: 58, radius: 10)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Row(
+                  children: [
+                    Expanded(child: ShimmerBox(height: 58, radius: 10)),
+                    SizedBox(width: 10),
+                    Expanded(child: ShimmerBox(height: 58, radius: 10)),
+                  ],
+                ),
+              ],
+            ),
+          ),
 
+          const SizedBox(height: 16),
+
+          // Medical history card shimmer
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const ShimmerBox(width: 140, height: 18, radius: 6),
+                const SizedBox(height: 14),
+                ...List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: ShimmerBox(height: 14, radius: 5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Settings card shimmer
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                const ShimmerBox(width: 80, height: 16, radius: 5),
+                const SizedBox(height: 14),
+                ...List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: 14),
+                    child: ShimmerBox(height: 44, radius: 8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Logout button shimmer
+          const ShimmerBox(height: 50, radius: 14),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
 
     return profileAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: Color(0xFFF2F4F7),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFB71C1C)),
-        ),
+      loading: () => Scaffold(
+        backgroundColor: const Color(0xFFF2F4F7),
+        appBar: _buildAppBar(),
+        body: _buildProfileShimmer(),
       ),
       error: (e, _) => Scaffold(
         backgroundColor: const Color(0xFFF2F4F7),

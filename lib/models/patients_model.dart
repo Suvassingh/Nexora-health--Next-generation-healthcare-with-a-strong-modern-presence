@@ -11,6 +11,7 @@ class PatientProfile {
   String bloodGroup; 
   List<String> conditions; 
   String avatar;
+  final String? preferredLanguage; 
 
   PatientProfile({
     required this.id,
@@ -23,7 +24,8 @@ class PatientProfile {
     required this.address,
     required this.bloodGroup,
     required this.conditions,
-    required this.avatar
+    required this.avatar,
+    this.preferredLanguage,
   });
 
   int? get ageInYears {
@@ -62,7 +64,9 @@ class PatientProfile {
       address: patient['address']?.toString() ?? '',
       bloodGroup: patient['blood_group']?.toString() ?? '',
       conditions: List<String>.from(patient['conditions'] ?? []),
-      avatar: patient['avatar'].toString()
+      avatar: patient['avatar'].toString(),
+          preferredLanguage: userProfile['preferred_language']?.toString(), 
+
 
     );
   }
@@ -75,11 +79,14 @@ class PatientProfile {
     'blood_group': bloodGroup.isEmpty ? null : bloodGroup,
     'conditions': conditions,
     'updated_at': DateTime.now().toIso8601String(),
+    
   };
 
   /// Fields saved to `user_profiles` table.
   Map<String, dynamic> toUserProfileUpdate() => {
     'full_name': fullName,
     'phone': phone,
+      'preferred_language': preferredLanguage, 
+
   };
 }

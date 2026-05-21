@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/provider/appointment_provider.dart';
 import 'package:patient_app/provider/home_provider.dart';
+import 'package:patient_app/widgets/simmer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
 import 'package:patient_app/call_screen.dart';
@@ -492,17 +493,72 @@ Future<void> _handleJoin(Appt appt) async {
       ),
     );
   }
+ // REPLACE:
   Widget _buildShimmer() => ListView.builder(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
     itemCount: 4,
-    itemBuilder: (_, __) => Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      height: 160,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
+    itemBuilder:
+        (_, __) => Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Doctor row
+              Row(
+                children: const [
+                  ShimmerBox(width: 48, height: 48, radius: 24), // avatar
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerBox(width: 160, height: 15, radius: 5),
+                        SizedBox(height: 6),
+                        ShimmerBox(width: 110, height: 12, radius: 4),
+                        SizedBox(height: 4),
+                        ShimmerBox(width: 90, height: 11, radius: 4),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  ShimmerBox(width: 70, height: 26, radius: 13), // status badge
+                ],
+              ),
+              const SizedBox(height: 14),
+              // Date / time / type row
+              Row(
+                children: const [
+                  ShimmerBox(width: 80, height: 12, radius: 4),
+                  SizedBox(width: 16),
+                  ShimmerBox(width: 60, height: 12, radius: 4),
+                  SizedBox(width: 16),
+                  ShimmerBox(width: 50, height: 12, radius: 4),
+                ],
+              ),
+              const SizedBox(height: 14),
+              // Button row
+              Row(
+                children: const [
+                  Expanded(child: ShimmerBox(height: 42, radius: 12)),
+                  SizedBox(width: 10),
+                  ShimmerBox(width: 80, height: 42, radius: 12),
+                ],
+              ),
+            ],
+          ),
+        ),
   );
 
 Widget _buildError(BuildContext context, String message) => Center(

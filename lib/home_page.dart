@@ -11,6 +11,8 @@ import 'package:patient_app/notification_screen.dart';
 import 'package:patient_app/provider/notification_provider.dart';
 import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/widgets/appointment_data.dart';
+import 'package:patient_app/widgets/language_toggle_button.dart';
+import 'package:patient_app/widgets/simmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/appointment_screen.dart';
@@ -228,8 +230,8 @@ PreferredSizeWidget _buildAppBar() => AppBar(
         ),
       ],
     ),
-    //  NEW ACTIONS 
     actions: [
+
       Padding(
         padding: const EdgeInsets.only(right: 12),
         child: Consumer(
@@ -274,6 +276,9 @@ PreferredSizeWidget _buildAppBar() => AppBar(
           },
         ),
       ),
+      const SizedBox(width: 4),
+
+      const LanguageToggleButton(),
     ],
   );
   String _getFirstName(PatientProfile profile) {
@@ -401,7 +406,7 @@ text: '${_greeting(context)}, $firstName ',
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      a.statusLabel,
+                      a.statusLabel (context),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -460,7 +465,7 @@ text: '${_greeting(context)}, $firstName ',
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              a.formattedDate,
+                              a.formattedDate (context),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppConstants.primaryColor,
@@ -999,7 +1004,7 @@ text: '${_greeting(context)}, $firstName ',
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    a.formattedDate,
+                    a.formattedDate(context),
                     style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   const SizedBox(width: 8),
@@ -1024,7 +1029,7 @@ text: '${_greeting(context)}, $firstName ',
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                a.statusLabel,
+                a.statusLabel(context),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,
@@ -1080,25 +1085,87 @@ text: '${_greeting(context)}, $firstName ',
     ),
   );
 
-  Widget _buildShimmer() => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      children: [
-        const SizedBox(height: 20),
-        ...List.generate(
-          5,
-          (_) => Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(14),
+Widget _buildShimmer() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ShimmerBox(width: 200, height: 26, radius: 8),
+                    const SizedBox(height: 8),
+                    const ShimmerBox(width: 150, height: 14, radius: 6),
+                  ],
+                ),
+              ),
+              const ShimmerBox(width: 44, height: 44, radius: 22),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Row(
+            children: [
+              Expanded(child: ShimmerBox(height: 130, radius: 16)),
+              SizedBox(width: 12),
+              Expanded(child: ShimmerBox(height: 130, radius: 16)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const ShimmerBox(height: 180, radius: 18),
+          const SizedBox(height: 20),
+          const Row(
+            children: [
+              Expanded(child: ShimmerBox(height: 72, radius: 14)),
+              SizedBox(width: 12),
+              Expanded(child: ShimmerBox(height: 72, radius: 14)),
+              SizedBox(width: 12),
+              Expanded(child: ShimmerBox(height: 72, radius: 14)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const ShimmerBox(width: 160, height: 18, radius: 6),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: 3,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder:
+                  (_, __) =>
+                      const ShimmerBox(width: 190, height: 110, radius: 14),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(height: 24),
+          const ShimmerBox(width: 140, height: 18, radius: 6),
+          const SizedBox(height: 12),
+          ...List.generate(
+            3,
+            (_) => const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: ShimmerBox(height: 70, radius: 14),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const ShimmerBox(width: 160, height: 18, radius: 6),
+          const SizedBox(height: 12),
+          ...List.generate(
+            2,
+            (_) => const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: ShimmerBox(height: 80, radius: 14),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
 
   Widget _buildError(String message, VoidCallback onRetry) {
     return Center(
