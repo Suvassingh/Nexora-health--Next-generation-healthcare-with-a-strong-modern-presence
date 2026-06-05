@@ -1,6 +1,8 @@
 import 'package:patient_app/models/patients_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../fcm_service.dart';
+
 class PatientService {
   final _supabase = Supabase.instance.client;
 
@@ -35,5 +37,6 @@ class PatientService {
     ]);
   }
 
-  Future<void> signOut() async => _auth.signOut();
+  Future<void> signOut() async {  await FcmService.onUserLogout();
+  _auth.signOut();}
 }

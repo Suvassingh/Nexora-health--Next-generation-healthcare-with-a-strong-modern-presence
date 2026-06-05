@@ -456,7 +456,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordChangedSuccess => 'Password changed successfully';
 
   @override
-  String get somethingWentWrong => 'Something went wrong';
+  String get somethingWentWrong => 'Something went wrong. Please try again.';
 
   @override
   String get passwordSecurityInfo => 'For security, please enter your current password first. The new password must be at least 8 characters.';
@@ -546,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailed => 'Login Failed';
 
   @override
-  String get loggingIn => 'Logging in...';
+  String get loggingIn => 'Logging in…';
 
   @override
   String get personalInfo => 'Personal Info';
@@ -555,13 +555,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountInfo => 'Account Info';
 
   @override
-  String get orSignupWith => 'or signup with';
+  String get orSignupWith => 'or sign up with';
 
   @override
   String get google => 'Google';
 
   @override
-  String get creatingAccount => 'Creating account...';
+  String get creatingAccount => 'Creating account…';
 
   @override
   String get nameRequired => 'Name is required';
@@ -588,7 +588,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountCreated => 'Account created successfully!';
 
   @override
-  String get accountSetupComplete => 'Account setup complete!';
+  String get accountSetupComplete => 'Account setup complete. Please login.';
 
   @override
   String get emailAlreadyRegistered => 'This email is already registered. Please login instead.';
@@ -597,7 +597,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incompleteProfile => 'Incomplete Profile';
 
   @override
-  String get completeProfileHint => 'Please complete your profile in settings.';
+  String get completeProfileHint => 'Please complete your profile information.';
 
   @override
   String get googleSignInFailed => 'Google Sign-In Failed';
@@ -896,4 +896,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get days => 'days';
+
+  @override
+  String get invalidEmail => 'Please enter a valid email address.';
+
+  @override
+  String get phoneInvalid => 'Phone number must be 10 digits.';
+
+  @override
+  String get ageMinimum18 => 'You must be at least 18 years old.';
+
+  @override
+  String get noInternetConnection => 'No internet connection. Please try again.';
+
+  @override
+  String get verifyEmailTitle => 'Verify Email';
+
+  @override
+  String get verifyEmailMessage => 'Account created. Please verify your email before login.';
+
+  @override
+  String get emailNotVerifiedTitle => 'Email Not Verified';
+
+  @override
+  String get emailNotVerifiedMessage => 'Please verify your email before logging in.';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get passwordResetSent => 'Password reset link sent to your email.';
+
+  @override
+  String get invalidCredentials => 'Invalid email or password.';
+
+  @override
+  String get emailNotVerified => 'Email not verified. Please check your inbox.';
+
+  @override
+  String get enterEmailForReset => 'enterEmailForReset';
+
+  @override
+  String get forgotPassword => 'forgotPassword';
+
+  @override
+  String get orSignInWith => 'Or SignIn With';
 }

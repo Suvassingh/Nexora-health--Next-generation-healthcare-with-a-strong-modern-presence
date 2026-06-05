@@ -337,9 +337,9 @@ Widget _buildProfileShimmer() {
         return Scaffold(
           backgroundColor: const Color(0xFFF2F4F7),
           appBar: _buildAppBar(),
-          floatingActionButton: _editing
-              ? null 
-              : VoiceFab(text: _buildProfileVoiceText()),
+          // floatingActionButton: _editing
+          //     ? null
+          //     : VoiceFab(text: _buildProfileVoiceText()),
           body: Column(
             children: [
               Expanded(
@@ -985,36 +985,61 @@ Widget _buildProfileShimmer() {
     ),
   );
 
+
   void _confirmLogout() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title:  Text(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
           AppLocalizations.of(context)!.logout,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content:  Text(AppLocalizations.of(context)!.logoutConfirm),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          AppLocalizations.of(context)!.logoutConfirm,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child:  Text(
-              AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
+              // Dispose active call listeners/resources
+
+              // Close dialog
+              Navigator.pop(ctx);
+
+              // Sign out
+              await _service.signOut();
+
+              // Navigate to login
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
+                MaterialPageRoute(
+                  builder: (context) => LoginScreen(),
+                ),
                     (Route<dynamic> route) => false,
               );
-              await _service.signOut();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFB71C1C),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child:  Text(
-              AppLocalizations.of(context)!.logout, style: TextStyle(color: Colors.white)),
+            child: Text(
+              AppLocalizations.of(context)!.logout,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

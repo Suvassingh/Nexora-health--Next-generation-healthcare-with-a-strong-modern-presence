@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:patient_app/l10n/app_localizations.dart';
+import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/models/chat_preview.dart';
-
 
 class ChatTile extends StatelessWidget {
   final ChatPreview preview;
@@ -9,113 +8,107 @@ class ChatTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const ChatTile({
+    super.key,
     required this.preview,
     required this.currentUserId,
     required this.onTap,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final appt = preview.appt;
-    final hasConversation = preview.conversationId != null;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        onTap: onTap,
-        leading: CircleAvatar(
-          radius: 26,
-          backgroundColor: const Color(0xFF1565C0).withOpacity(0.12),
-          backgroundImage: appt.avatarUrl != null
-              ? NetworkImage(appt.avatarUrl!)
-              : null,
-          child: appt.avatarUrl == null
-              ? Text(
-                  appt.initials,
-                  style: const TextStyle(
-                    color: Color(0xFF1565C0),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                )
-              : null,
-        ),
-        title: Text(
-          'Dr. ${appt.doctorName}',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-            color: Color(0xFF1A1A2E),
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 3),
-          child: Text(
-            preview.lastMessage ??
-                (hasConversation ? l.noMessagesYet : l.tapToStartChatting),
-
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              color: preview.lastMessage != null
-                  ? Colors.grey.shade700
-                  : Colors.grey.shade400,
-            ),
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (preview.lastMessageAt != null)
-              Text(
-                _formatTime(preview.lastMessageAt!, l),
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-              ),
-            const SizedBox(height: 4),
-            if (!hasConversation)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1565C0).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              child: Text(l.newLabel,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF1565C0),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+  String _formatTime(DateTime? time) {
+    if (time == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 24)
+      return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
+    return '${time.day}/${time.month}';
   }
 
-  String _formatTime(DateTime dt,AppLocalizations l) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-     if (diff.inMinutes < 1) return l.justNow;
-    if (diff.inHours < 1) return l.minutesAgo(diff.inMinutes);
-    if (diff.inDays < 1)
-      return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    if (diff.inDays < 7) return l.daysAgo(diff.inDays);
-    return '${dt.day}/${dt.month}';
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Stack(
+        children: [
+          CircleAvatar(
+            backgroundImage: preview.doctorAvatarUrl != null
+                ? NetworkImage(preview.doctorAvatarUrl!)
+                : null,
+            child: preview.doctorAvatarUrl == null
+                ? Text(preview.doctorName[0].toUpperCase())
+                : null,
+          ),
+          if (preview.isOnline)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              preview.doctorName,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+           if (!preview.hasTodayAppointment)
+            Icon(Icons.lock_outline, size: 14, color: Colors.grey.shade500),
+        ],
+      ),
+      subtitle: preview.lastMessage != null
+          ? Text(
+              preview.lastMessage!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            )
+          : null,
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatTime(preview.lastMessageAt),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              if (!preview.hasTodayAppointment) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.lock_outline, size: 12, color: Colors.grey.shade500),
+              ],
+            ],
+          ),
+          if (preview.unreadCount > 0)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppConstants.primaryColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                preview.unreadCount.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+      onTap: onTap,
+    );
   }
 }

@@ -80,7 +80,7 @@ AppLocalizations get _l => AppLocalizations.of(context)!;
 
     setState(() => _loading = true);
     try {
-      // Step 1 — Re-authenticate with current password to verify identity
+      // Step 1  Re-authenticate with current password to verify identity
       final user = Supabase.instance.client.auth.currentUser;
       if (user?.email == null) {
         _showSnack(_l.emailNotFound, isError: true);
@@ -98,7 +98,7 @@ AppLocalizations get _l => AppLocalizations.of(context)!;
         return;
       }
 
-      // Step 2 — Update to new password
+      // Step 2  Update to new password
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: _newCtrl.text.trim()),
       );
@@ -193,9 +193,7 @@ _showSnack('${_l.somethingWentWrong}: $e', isError: true);
     );
   }
 
-  // //  AppBar 
 
-  //  Info banner 
   Widget _buildInfoBanner() {
     return Container(
       padding: const EdgeInsets.all(14),

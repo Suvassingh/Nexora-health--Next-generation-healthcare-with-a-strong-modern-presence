@@ -2,20 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
+import 'package:patient_app/livekit_call_screen.dart';
 import 'package:patient_app/provider/appointment_provider.dart';
 import 'package:patient_app/provider/home_provider.dart';
+import 'package:patient_app/services/encryption_service.dart';
+import 'package:patient_app/services/user_key_service.dart';
 import 'package:patient_app/widgets/simmer.dart';
-import 'package:patient_app/widgets/voice_fab.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:patient_app/appointment_confirm_screen.dart';
-import 'package:patient_app/call_screen.dart';
 import 'package:patient_app/services/api_service.dart';
 import 'package:patient_app/app_constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'chat_screen.dart';
 import 'models/appointment_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-
 
 IconData consultTypeIcon(String type) {
   switch (type.toLowerCase()) {
@@ -75,11 +73,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
   late TabController _tabCtrl;
   bool _cancelling = false;
 
-
-
   @override
   void initState() {
     super.initState();
+    _initUserKeys();
     _tabCtrl = TabController(length: 5, vsync: this);
   }
 
@@ -88,7 +85,12 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     _tabCtrl.dispose();
     super.dispose();
   }
-
+  Future<void> _initUserKeys() async {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId != null) {
+      await UserKeyService.ensureUserKeyPair(currentUserId);
+    }
+  }
   List<Appt> _filterList(List<Appt> all, String type) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -117,6 +119,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt)),
     };
   }
+
   Future<void> _cancelAppointment(Appt appt) async {
     final confirm = await _showCancelDialog(appt);
     if (confirm != true) return;
@@ -124,7 +127,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     try {
       await ApiService.cancelAppointment(appt.id);
       Get.snackbar(
-       AppLocalizations.of(context)!.cancelled,
+        AppLocalizations.of(context)!.cancelled,
         AppLocalizations.of(context)!.appointmentCancelledSuccess,
         backgroundColor: const Color(0xFFEAF7EF),
         colorText: const Color(0xFF1A7A4A),
@@ -132,7 +135,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         margin: const EdgeInsets.all(12),
         duration: const Duration(seconds: 3),
       );
-      //  Invalidate BOTH providers so home + appointments refresh together
       ref.invalidate(appointmentsProvider);
       ref.invalidate(homeDataProvider);
     } catch (e) {
@@ -152,8 +154,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
   Future<bool?> _showCancelDialog(Appt appt) => showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-     title: Text(
+      shape:
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(
         AppLocalizations.of(context)!.cancelAppointmentTitle,
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
@@ -163,7 +166,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         children: [
           Text(
             'डा. ${appt.doctorName}',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style:
+            const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: 4),
           Text(
@@ -180,7 +184,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: Text(AppLocalizations.of(context)!.back, style: TextStyle(color: Colors.grey)),
+          child: Text(AppLocalizations.of(context)!.back,
+              style: TextStyle(color: Colors.grey)),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
@@ -192,89 +197,232 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
             ),
             elevation: 0,
           ),
-         child: Text(AppLocalizations.of(context)!.cancelBtn),
+          child: Text(AppLocalizations.of(context)!.cancelBtn),
         ),
       ],
     ),
   );
-Future<void> _handleJoin(Appt appt) async {
+Future<void> _autoCompletePastAppointments(List<Appt> allAppointments) async {
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final pastConfirmed = allAppointments
+        .where(
+          (a) =>
+              a.status == 'confirmed' &&
+              DateTime(
+                a.scheduledAt.year,
+                a.scheduledAt.month,
+                a.scheduledAt.day,
+              ).isBefore(todayStart),
+        )
+        .toList();
+
+    if (pastConfirmed.isEmpty) return;
+
+    for (final appt in pastConfirmed) {
+      try {
+        await ApiService.completeAppointment(appt.id);
+        debugPrint('Auto‑completed appointment ${appt.id} (day passed)');
+      } catch (e) {
+        debugPrint('Auto‑complete failed for ${appt.id}: $e');
+      }
+    }
+
+    ref.invalidate(appointmentsProvider);
+  }
+  // Safe conversation creation 
+  Future<String> _ensureConversationExists(
+      String patientId, String doctorId) async {
+    final supabase = Supabase.instance.client;
+
+    // Check if conversation already exists
+    final existing = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('patient_id', patientId)
+        .eq('doctor_id', doctorId)
+        .maybeSingle();
+
+    if (existing != null) return existing['id'] as String;
+
+    // Fetch public keys
+    final rows = await supabase
+        .from('user_profiles')
+        .select('id, public_key')
+        .inFilter('id', [patientId, doctorId]);
+
+    final Map<String, String?> rawKeys = {
+      for (final r in rows) r['id'] as String: r['public_key'] as String?,
+    };
+
+    final patientKey = rawKeys[patientId];
+    final doctorKey = rawKeys[doctorId];
+
+    if (patientKey == null) {
+      throw Exception(
+          'Patient has not set up encryption yet. Please ask them to open the app once.');
+    }
+    if (doctorKey == null) {
+      throw Exception(
+          'Doctor has not set up encryption yet. Please ask them to open the app once.');
+    }
+
+    // Generate AES key and encrypt for both parties
+    final aesKey = EncryptionService.generateAESKey();
+    final aesB64 = aesKey.base64;
+
+    final encForPatient = EncryptionService.encryptWithRSA(
+      aesB64,
+      EncryptionService.parsePublicKeyFromPem(patientKey),
+    );
+    final encForDoctor = EncryptionService.encryptWithRSA(
+      aesB64,
+      EncryptionService.parsePublicKeyFromPem(doctorKey),
+    );
+
+    // Insert conversation
+    final response = await supabase
+        .from('conversations')
+        .insert({
+      'patient_id': patientId,
+      'doctor_id': doctorId,
+      'aes_key_encrypted_for_patient': encForPatient,
+      'aes_key_encrypted_for_doctor': encForDoctor,
+    })
+        .select('id')
+        .single();
+
+    return response['id'] as String;
+  }
+
+  // JOIN HANDLER
+  Future<void> _handleJoin(Appt appt) async {
     final type = appt.consultType.toLowerCase();
 
-    if (type == 'video' || type == 'audio' || type == 'phone') {
-      final isVideo = type == 'video';
-
-      // Request permissions
-      final statuses = await [
-        Permission.microphone,
-        if (isVideo) Permission.camera,
-      ].request();
-
-      if (statuses.values.any((s) => !s.isGranted)) {
-        Get.snackbar(
-         AppLocalizations.of(context)!.permissionRequired,
-          isVideo
-              ? AppLocalizations.of(context)!.videoCameraPermission
-              : AppLocalizations.of(context)!.audioMicPermission,
-          backgroundColor: const Color(0xFFFEF2F2),
-          colorText: const Color(0xFFEF4444),
-          borderRadius: 12,
-          margin: const EdgeInsets.all(12),
-        );
-        return;
+    //  CHAT 
+    if (type == 'chat' || type == 'message') {
+      String? doctorUserId = appt.doctorUserId;
+      if (doctorUserId == null || doctorUserId.isEmpty) {
+        final int? doctorIdInt = int.tryParse(appt.doctorId ?? '');
+        if (doctorIdInt == null) {
+          Get.snackbar('Error', 'Invalid doctor information.');
+          return;
+        }
+        final supabase = Supabase.instance.client;
+        final record = await supabase
+            .from('doctors')
+            .select('user_id')
+            .eq('id', doctorIdInt)
+            .maybeSingle();
+        doctorUserId = record?['user_id'] as String?;
+        if (doctorUserId == null || doctorUserId.isEmpty) {
+          Get.snackbar('Error', 'Doctor not found.');
+          return;
+        }
       }
 
-      // Validate doctorId is a UUID before calling
-      if (appt.doctorId == null || appt.doctorId!.length < 10) {
-        Get.snackbar(
-          AppLocalizations.of(context)!.error,
-          AppLocalizations.of(context)!.doctorIdNotFound,
-        );
-
-        return;
-      }
+      final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
       try {
-        final result = await ApiService.initiateCall(
-          calleeId: appt.doctorId!,
+        final String conversationId =
+        await _ensureConversationExists(currentUserId, doctorUserId!);
+final now = DateTime.now();
+        final appointmentDate = DateTime(
+          appt.scheduledAt.year,
+          appt.scheduledAt.month,
+          appt.scheduledAt.day,
+        );
+        final todayDate = DateTime(now.year, now.month, now.day);
+        final canMessageToday = appointmentDate == todayDate;
+        Get.to(() => ChatScreen(
+          conversationId: conversationId,
+          partnerId: doctorUserId!,
+          partnerName: 'Dr. ${appt.doctorName}',
+          partnerAvatarUrl: appt.avatarUrl,
+            canSendMessages:
+                canMessageToday, 
+
+        ));
+      } catch (e) {
+        Get.snackbar('Error', e.toString());
+      }
+      return;
+    }
+
+    //  CALL 
+    if (type == 'video' || type == 'audio' || type == 'call') {
+      final bool isVideo = type == 'video';
+      try {
+        String? doctorUserId = appt.doctorUserId;
+        if (doctorUserId == null || doctorUserId.isEmpty) {
+          final int? doctorIdInt = int.tryParse(appt.doctorId ?? '');
+          if (doctorIdInt == null) {
+            Get.snackbar(
+              AppLocalizations.of(context)!.error,
+              'Doctor information is invalid.',
+              backgroundColor: const Color(0xFFFEF2F2),
+              colorText: const Color(0xFFEF4444),
+            );
+            return;
+          }
+          final supabase = Supabase.instance.client;
+          final doctorRecord = await supabase
+              .from('doctors')
+              .select('user_id')
+              .eq('id', doctorIdInt)
+              .maybeSingle();
+          doctorUserId = doctorRecord?['user_id'] as String?;
+          if (doctorUserId == null || doctorUserId.isEmpty) {
+            Get.snackbar(
+              AppLocalizations.of(context)!.error,
+              'Doctor not found.',
+              backgroundColor: const Color(0xFFFEF2F2),
+              colorText: const Color(0xFFEF4444),
+            );
+            return;
+          }
+        }
+
+        final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+        final result = await ApiService.initiateLiveKitCall(
+          callerId: currentUserId,
+          calleeId: doctorUserId!,
           appointmentId: appt.id,
           callType: isVideo ? 'video' : 'audio',
+          callerName: 'Patient',
         );
-        final callId = result['call_id'] as String;
 
-        Get.to(
-          () => CallScreen(
-            callId: callId,
-            remoteUserId: appt.doctorId!,
-            remoteUserName: 'Dr. ${appt.doctorName}',
-            isVideo: isVideo,
-            isCaller: true,
-          ),
-        );
+        Get.to(() => LiveKitCallScreen(
+          livekitUrl: 'ws://45.115.217.244:7880',
+          token: result['callerToken']!,
+          roomName: result['roomName']!,
+          remoteUserName: 'Dr. ${appt.doctorName}',
+          isVideo: isVideo,
+          isCaller: true,
+        ));
       } catch (e) {
-        Get.snackbar(AppLocalizations.of(context)!.error, '${AppLocalizations.of(context)!.callFailed}: $e',
+        Get.snackbar(
+          AppLocalizations.of(context)!.error,
+          '${AppLocalizations.of(context)!.callFailed}: $e',
           backgroundColor: const Color(0xFFFEF2F2),
           colorText: const Color(0xFFEF4444),
-          borderRadius: 12,
-          margin: const EdgeInsets.all(12),
         );
       }
-    } else if (type == 'chat' || type == 'message') {
-      Get.to(() => ChatScreen(appt: appt));
-    } else {
-      Get.snackbar(
-        AppLocalizations.of(context)!.physicalVisit,
-        AppLocalizations.of(
-          context,
-        )!.physicalVisitDetail(appt.doctorName, appt.healthpostName),
-        backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-        colorText: AppConstants.primaryColor,
-        borderRadius: 12,
-        margin: const EdgeInsets.all(12),
-        duration: const Duration(seconds: 3),
-      );
+      return;
     }
+
+    //  PHYSICAL VISIT 
+    Get.snackbar(
+      AppLocalizations.of(context)!.physicalVisit,
+      AppLocalizations.of(context)!
+          .physicalVisitDetail(appt.doctorName, appt.healthpostName),
+      backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
+      colorText: AppConstants.primaryColor,
+    );
   }
-String _buildAppointmentVoiceText(List<Appt> all) {
+
+  // BUILD, UI METHODS 
+  String _buildAppointmentVoiceText(List<Appt> all) {
     final today = _filterList(all, 'today').length;
     final upcoming = _filterList(all, 'upcoming').length;
     final pending = _filterList(all, 'pending').length;
@@ -296,14 +444,28 @@ String _buildAppointmentVoiceText(List<Appt> all) {
         'Pending approval: $pending. '
         'Completed: $completed.';
   }
+bool _autoCompletedTriggered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_autoCompletedTriggered) {
+      _autoCompletedTriggered = true;
+      final all = ref.read(appointmentsProvider).value;
+      if (all != null) _autoCompletePastAppointments(all);
+    }
+  }
   @override
   Widget build(BuildContext context) {
     final apptAsync = ref.watch(appointmentsProvider);
+    apptAsync.whenData((all) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoCompletePastAppointments(all);
+      });
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
-
-
       appBar: apptAsync.when(
         data: (all) => _buildAppBar(
           today: _filterList(all, 'today'),
@@ -312,9 +474,7 @@ String _buildAppointmentVoiceText(List<Appt> all) {
         ),
         loading: () => _buildAppBar(today: [], upcoming: [], pending: []),
         error: (_, __) => _buildAppBar(today: [], upcoming: [], pending: []),
-
       ),
-
       body: apptAsync.when(
         loading: () => _buildShimmer(),
         error: (e, __) => _buildError(context, e.toString()),
@@ -337,36 +497,8 @@ String _buildAppointmentVoiceText(List<Appt> all) {
           );
         },
       ),
-
-     floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-         
-          apptAsync.whenOrNull(
-                data: (all) => VoiceFab(text: _buildAppointmentVoiceText(all)),
-              ) ??
-              const SizedBox.shrink(),
-         
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'book_fab',
-            onPressed: () => Get.to(
-              () => const SimpleBookScreen(),
-            )?.then((_) => ref.invalidate(appointmentsProvider)),
-            backgroundColor: AppConstants.primaryColor,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add_rounded),
-            label: Text(
-              AppLocalizations.of(context)!.newBook,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
     );
   }
-
 
   PreferredSizeWidget _buildAppBar({
     required List<Appt> today,
@@ -375,7 +507,8 @@ String _buildAppointmentVoiceText(List<Appt> all) {
   }) =>
       AppBar(
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
+          borderRadius:
+          BorderRadiusGeometry.vertical(bottom: Radius.circular(15)),
         ),
         backgroundColor: AppConstants.primaryColor,
         elevation: 0,
@@ -387,7 +520,7 @@ String _buildAppointmentVoiceText(List<Appt> all) {
         )
             : null,
         title: Text(
-      AppLocalizations.of(context)!.myAppointments,
+          AppLocalizations.of(context)!.myAppointments,
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
@@ -432,8 +565,8 @@ String _buildAppointmentVoiceText(List<Appt> all) {
                 showDot: pending.isNotEmpty,
               ),
             ),
-             Tab(text: AppLocalizations.of(context)!.completed),
-             Tab(text:  AppLocalizations.of(context)!.cancelled),
+            Tab(text: AppLocalizations.of(context)!.completed),
+            Tab(text: AppLocalizations.of(context)!.cancelled),
           ],
         ),
       );
@@ -447,7 +580,8 @@ String _buildAppointmentVoiceText(List<Appt> all) {
       color: AppConstants.primaryColor,
       onRefresh: () async {
         ref.invalidate(appointmentsProvider);
-      },      child: ListView.builder(
+      },
+      child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: list.length,
         itemBuilder: (_, i) => _ApptCard(
@@ -473,23 +607,22 @@ String _buildAppointmentVoiceText(List<Appt> all) {
         appt: a,
         onCancel: (a.isUpcoming || a.isPending || a.isToday)
             ? () {
-                Navigator.pop(context);
-                _cancelAppointment(a);
-              }
+          Navigator.pop(context);
+          _cancelAppointment(a);
+        }
             : null,
         onJoin: canJoin
             ? () {
-                Navigator.pop(context);
-                _handleJoin(a);
-              }
+          Navigator.pop(context);
+          _handleJoin(a);
+        }
             : null,
       ),
     );
   }
 
- Widget _buildEmpty(BuildContext context, String type) {
+  Widget _buildEmpty(BuildContext context, String type) {
     final l = AppLocalizations.of(context)!;
-
     final icon = switch (type) {
       'today' => Icons.today_rounded,
       'upcoming' => Icons.calendar_today_outlined,
@@ -497,7 +630,6 @@ String _buildAppointmentVoiceText(List<Appt> all) {
       'completed' => Icons.check_circle_outline_rounded,
       _ => Icons.cancel_outlined,
     };
-
     final msg = switch (type) {
       'today' => l.noAppointmentsToday,
       'upcoming' => l.noUpcomingAppointment,
@@ -505,21 +637,17 @@ String _buildAppointmentVoiceText(List<Appt> all) {
       'completed' => l.noCompletedAppointments,
       _ => l.noCancelledAppointments,
     };
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 64, color: Colors.grey.shade200),
           const SizedBox(height: 16),
-          Text(
-            msg,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade400,
-            ),
-          ),
+          Text(msg,
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade400)),
           const SizedBox(height: 8),
           if (type == 'today' || type == 'upcoming' || type == 'pending')
             Text(
@@ -531,100 +659,91 @@ String _buildAppointmentVoiceText(List<Appt> all) {
       ),
     );
   }
- // REPLACE:
+
   Widget _buildShimmer() => ListView.builder(
     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
     itemCount: 4,
-    itemBuilder:
-        (_, __) => Container(
-          margin: const EdgeInsets.only(bottom: 14),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+    itemBuilder: (_, __) => Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              ShimmerBox(width: 48, height: 48, radius: 24),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerBox(width: 160, height: 15, radius: 5),
+                    SizedBox(height: 6),
+                    ShimmerBox(width: 110, height: 12, radius: 4),
+                    SizedBox(height: 4),
+                    ShimmerBox(width: 90, height: 11, radius: 4),
+                  ],
+                ),
               ),
+              SizedBox(width: 12),
+              ShimmerBox(width: 70, height: 26, radius: 13),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Doctor row
-              Row(
-                children: const [
-                  ShimmerBox(width: 48, height: 48, radius: 24), // avatar
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ShimmerBox(width: 160, height: 15, radius: 5),
-                        SizedBox(height: 6),
-                        ShimmerBox(width: 110, height: 12, radius: 4),
-                        SizedBox(height: 4),
-                        ShimmerBox(width: 90, height: 11, radius: 4),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  ShimmerBox(width: 70, height: 26, radius: 13), // status badge
-                ],
-              ),
-              const SizedBox(height: 14),
-              // Date / time / type row
-              Row(
-                children: const [
-                  ShimmerBox(width: 80, height: 12, radius: 4),
-                  SizedBox(width: 16),
-                  ShimmerBox(width: 60, height: 12, radius: 4),
-                  SizedBox(width: 16),
-                  ShimmerBox(width: 50, height: 12, radius: 4),
-                ],
-              ),
-              const SizedBox(height: 14),
-              // Button row
-              Row(
-                children: const [
-                  Expanded(child: ShimmerBox(height: 42, radius: 12)),
-                  SizedBox(width: 10),
-                  ShimmerBox(width: 80, height: 42, radius: 12),
-                ],
-              ),
+          const SizedBox(height: 14),
+          Row(
+            children: const [
+              ShimmerBox(width: 80, height: 12, radius: 4),
+              SizedBox(width: 16),
+              ShimmerBox(width: 60, height: 12, radius: 4),
+              SizedBox(width: 16),
+              ShimmerBox(width: 50, height: 12, radius: 4),
             ],
           ),
-        ),
+          const SizedBox(height: 14),
+          Row(
+            children: const [
+              Expanded(child: ShimmerBox(height: 42, radius: 12)),
+              SizedBox(width: 10),
+              ShimmerBox(width: 80, height: 42, radius: 12),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 
-Widget _buildError(BuildContext context, String message) => Center(
+  Widget _buildError(BuildContext context, String message) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 48,
-            color: Colors.grey.shade300,
-          ),
+          Icon(Icons.error_outline_rounded,
+              size: 48, color: Colors.grey.shade300),
           const SizedBox(height: 12),
           Text(
             AppLocalizations.of(context)!.dataLoadFailed,
             style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w600,
-            ),
+                fontSize: 15,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
-          Text(
-            message,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-            textAlign: TextAlign.center,
-          ),
+          Text(message,
+              style:
+              TextStyle(fontSize: 11, color: Colors.grey.shade400),
+              textAlign: TextAlign.center),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: () => ref.invalidate(appointmentsProvider),
@@ -644,6 +763,7 @@ Widget _buildError(BuildContext context, String message) => Center(
   );
 }
 
+//  Helper widgets
 class _BadgeTab extends StatelessWidget {
   final String label;
   final int count;
@@ -672,10 +792,9 @@ class _BadgeTab extends StatelessWidget {
           child: Text(
             '$count',
             style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.white),
           ),
         ),
       ],
@@ -690,7 +809,7 @@ class _ApptCard extends StatelessWidget {
   final bool cancelling;
   final VoidCallback onCancel;
   final VoidCallback onJoin;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
 
   const _ApptCard({
     required this.appt,
@@ -714,11 +833,13 @@ class _ApptCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: appt.isPending
-            ? const Border(left: BorderSide(color: Color(0xFFF57F17), width: 4))
+            ? const Border(
+            left: BorderSide(color: Color(0xFFF57F17), width: 4))
             : appt.isToday
             ? Border(
-                left: BorderSide(color: AppConstants.primaryColor, width: 4),
-              )
+          left: BorderSide(
+              color: AppConstants.primaryColor, width: 4),
+        )
             : null,
         boxShadow: [
           BoxShadow(
@@ -733,28 +854,24 @@ class _ApptCard extends StatelessWidget {
           if (appt.isToday)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: AppConstants.primaryColor.withOpacity(0.08),
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
-                ),
+                    top: Radius.circular(18)),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.today_rounded,
-                    size: 14,
-                    color: AppConstants.primaryColor,
-                  ),
+                  Icon(Icons.today_rounded,
+                      size: 14, color: AppConstants.primaryColor),
                   const SizedBox(width: 6),
-                 Text(
+                  Text(
                     AppLocalizations.of(context)!.todaysAppointment,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: AppConstants.primaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        fontSize: 12,
+                        color: AppConstants.primaryColor,
+                        fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -762,26 +879,24 @@ class _ApptCard extends StatelessWidget {
           if (appt.isPending)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: const BoxDecoration(
                 color: Color(0xFFFFF8E1),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+                borderRadius:
+                BorderRadius.vertical(top: Radius.circular(18)),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.hourglass_empty_rounded,
-                    size: 14,
-                    color: Color(0xFFF57F17),
-                  ),
+                  const Icon(Icons.hourglass_empty_rounded,
+                      size: 14, color: Color(0xFFF57F17)),
                   const SizedBox(width: 6),
-                 Text(
+                  Text(
                     AppLocalizations.of(context)!.awaitingDoctorConfirmation,
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFE65100),
-                      fontWeight: FontWeight.w600,
-                    ),
+                        fontSize: 12,
+                        color: Color(0xFFE65100),
+                        fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -794,10 +909,9 @@ class _ApptCard extends StatelessWidget {
                 Stack(
                   children: [
                     _Avatar(
-                      name: appt.doctorName,
-                      url: appt.avatarUrl,
-                      size: 50,
-                    ),
+                        name: appt.doctorName,
+                        url: appt.avatarUrl,
+                        size: 50),
                     Positioned(
                       right: 0,
                       bottom: 0,
@@ -806,9 +920,11 @@ class _ApptCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: typeColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(
+                              color: Colors.white, width: 1.5),
                         ),
-                        child: Icon(typeIcon, size: 11, color: Colors.white),
+                        child:
+                        Icon(typeIcon, size: 11, color: Colors.white),
                       ),
                     ),
                   ],
@@ -821,10 +937,9 @@ class _ApptCard extends StatelessWidget {
                       Text(
                         'डा. ${appt.doctorName}',
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A)),
                       ),
                       const SizedBox(height: 3),
                       Text(
@@ -832,9 +947,7 @@ class _ApptCard extends StatelessWidget {
                             ? appt.specialty
                             : appt.healthpostName,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                            fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 7),
                       Wrap(
@@ -845,27 +958,21 @@ class _ApptCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.calendar_today_rounded,
-                                size: 13,
-                                color: Color(0xFFB71C1C),
-                              ),
+                              const Icon(Icons.calendar_today_rounded,
+                                  size: 13, color: Color(0xFFB71C1C)),
                               const SizedBox(width: 5),
                               Text(
                                 appt.dateTimeLabel,
                                 style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFFB71C1C),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                    fontSize: 13,
+                                    color: Color(0xFFB71C1C),
+                                    fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: typeColor.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(20),
@@ -873,15 +980,15 @@ class _ApptCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(typeIcon, size: 12, color: typeColor),
+                                Icon(typeIcon,
+                                    size: 12, color: typeColor),
                                 const SizedBox(width: 4),
                                 Text(
                                   typeLabel,
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    color: typeColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                      fontSize: 11,
+                                      color: typeColor,
+                                      fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -894,10 +1001,9 @@ class _ApptCard extends StatelessWidget {
                         Text(
                           appt.patientNotes!,
                           style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
+                              fontSize: 11,
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -907,9 +1013,7 @@ class _ApptCard extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 5,
-                  ),
+                      horizontal: 11, vertical: 5),
                   decoration: BoxDecoration(
                     color: appt.statusColor,
                     borderRadius: BorderRadius.circular(20),
@@ -917,10 +1021,9 @@ class _ApptCard extends StatelessWidget {
                   child: Text(
                     appt.statusNe,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
@@ -946,14 +1049,14 @@ class _ApptCard extends StatelessWidget {
                         label: Text(
                           _joinLabel(appt.consultType, context),
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: typeColor,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -969,26 +1072,26 @@ class _ApptCard extends StatelessWidget {
                         onPressed: cancelling ? null : onCancel,
                         icon: cancelling
                             ? const SizedBox(
-                                width: 15,
-                                height: 15,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.red,
-                                ),
-                              )
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
+                        )
                             : const Icon(Icons.cancel_outlined, size: 17),
                         label: Text(
                           AppLocalizations.of(context)!.cancelBtn,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600),
                         ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade600,
                           side: BorderSide(color: Colors.red.shade300),
                           backgroundColor: Colors.red.shade50,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1008,9 +1111,8 @@ class _ApptCard extends StatelessWidget {
     return cardContent;
   }
 
- String _joinLabel(String type, BuildContext context) {
+  String _joinLabel(String type, BuildContext context) {
     final l = AppLocalizations.of(context)!;
-
     switch (type.toLowerCase()) {
       case 'video':
         return l.joinVideoCall;
@@ -1034,9 +1136,8 @@ class _DetailSheet extends StatelessWidget {
   const _DetailSheet({required this.appt, this.onCancel, this.onJoin});
 
   @override
-Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-
     final typeColor = consultTypeColor(appt.consultType);
     final typeIcon = consultTypeIcon(appt.consultType);
 
@@ -1056,13 +1157,13 @@ Widget build(BuildContext context) {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
             ),
             Container(
               margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: typeColor.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
@@ -1075,18 +1176,16 @@ Widget build(BuildContext context) {
                   Text(
                     consultTypeLabel(appt.consultType, context),
                     style: TextStyle(
-                      fontSize: 13,
-                      color: typeColor,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        fontSize: 13,
+                        color: typeColor,
+                        fontWeight: FontWeight.w700),
                   ),
                   const Spacer(),
                   Text(
                     _consultDescription(appt.consultType, context),
                     style: TextStyle(
-                      fontSize: 12,
-                      color: typeColor.withOpacity(0.8),
-                    ),
+                        fontSize: 12,
+                        color: typeColor.withOpacity(0.8)),
                   ),
                 ],
               ),
@@ -1095,9 +1194,7 @@ Widget build(BuildContext context) {
               Container(
                 margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                    horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF8E1),
                   borderRadius: BorderRadius.circular(10),
@@ -1105,22 +1202,17 @@ Widget build(BuildContext context) {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.hourglass_empty_rounded,
-                      size: 16,
-                      color: Color(0xFFF57F17),
-                    ),
+                    const Icon(Icons.hourglass_empty_rounded,
+                        size: 16, color: Color(0xFFF57F17)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                       AppLocalizations.of(
-                          context,
-                        )!.appointmentPendingConfirmation,
+                        AppLocalizations.of(context)!
+                            .appointmentPendingConfirmation,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFFE65100),
-                          fontWeight: FontWeight.w500,
-                        ),
+                            fontSize: 12,
+                            color: Color(0xFFE65100),
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -1136,10 +1228,9 @@ Widget build(BuildContext context) {
                       Stack(
                         children: [
                           _Avatar(
-                            name: appt.doctorName,
-                            url: appt.avatarUrl,
-                            size: 56,
-                          ),
+                              name: appt.doctorName,
+                              url: appt.avatarUrl,
+                              size: 56),
                           Positioned(
                             right: 0,
                             bottom: 0,
@@ -1149,15 +1240,10 @@ Widget build(BuildContext context) {
                                 color: typeColor,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
-                                ),
+                                    color: Colors.white, width: 1.5),
                               ),
-                              child: Icon(
-                                typeIcon,
-                                size: 12,
-                                color: Colors.white,
-                              ),
+                              child: Icon(typeIcon,
+                                  size: 12, color: Colors.white),
                             ),
                           ),
                         ],
@@ -1170,10 +1256,9 @@ Widget build(BuildContext context) {
                             Text(
                               'डा. ${appt.doctorName}',
                               style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A1A),
-                              ),
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A1A1A)),
                             ),
                             const SizedBox(height: 3),
                             Text(
@@ -1181,9 +1266,7 @@ Widget build(BuildContext context) {
                                   ? appt.specialty
                                   : appt.healthpostName,
                               style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
+                                  fontSize: 13, color: Colors.grey),
                             ),
                             if (appt.specialty.isNotEmpty &&
                                 appt.healthpostName.isNotEmpty) ...[
@@ -1191,9 +1274,7 @@ Widget build(BuildContext context) {
                               Text(
                                 appt.healthpostName,
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
+                                    fontSize: 12, color: Colors.grey),
                               ),
                             ],
                           ],
@@ -1201,9 +1282,7 @@ Widget build(BuildContext context) {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
+                            horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
                           color: appt.statusColor,
                           borderRadius: BorderRadius.circular(20),
@@ -1211,44 +1290,39 @@ Widget build(BuildContext context) {
                         child: Text(
                           appt.statusNe,
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
                   _SheetRow(
-                    icon: Icons.calendar_today_rounded,
-                    label: l.date,
-                    value: appt.dateLabel,
-                  ),
+                      icon: Icons.calendar_today_rounded,
+                      label: l.date,
+                      value: appt.dateLabel),
                   _SheetRow(
-                    icon: Icons.access_time_rounded,
-                    label: l.time,
-                    value: appt.timeLabel,
-                  ),
+                      icon: Icons.access_time_rounded,
+                      label: l.time,
+                      value: appt.timeLabel),
                   _SheetRow(
-                    icon: typeIcon,
-                    label: l.consultationType,
-                    value: consultTypeLabel(appt.consultType, context),
-                  ),
+                      icon: typeIcon,
+                      label: l.consultationType,
+                      value: consultTypeLabel(
+                          appt.consultType, context)),
                   if (appt.patientNotes != null &&
                       appt.patientNotes!.isNotEmpty)
                     _SheetRow(
-                      icon: Icons.notes_rounded,
-                      label: l.reason,
-                      value: appt.patientNotes!,
-                    ),
-                _SheetRow(
-                    icon: Icons.home_outlined,
-                    label: l.healthInstitution,
-                    value: appt.healthpostName.isEmpty
-                        ? '—'
-                        : appt.healthpostName,
-                  ),
+                        icon: Icons.notes_rounded,
+                        label: l.reason,
+                        value: appt.patientNotes!),
+                  _SheetRow(
+                      icon: Icons.home_outlined,
+                      label: l.healthInstitution,
+                      value: appt.healthpostName.isEmpty
+                          ? '—'
+                          : appt.healthpostName),
                   const SizedBox(height: 24),
                   if (onJoin != null)
                     SizedBox(
@@ -1259,14 +1333,14 @@ Widget build(BuildContext context) {
                         label: Text(
                           _joinLabelFull(appt.consultType, context),
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: typeColor,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -1280,18 +1354,19 @@ Widget build(BuildContext context) {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: onCancel,
-                        icon: const Icon(Icons.cancel_outlined, size: 18),
-                       label: Text(l.cancelBtn,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        icon: const Icon(Icons.cancel_outlined,
+                            size: 18),
+                        label: Text(l.cancelBtn,
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade600,
                           backgroundColor: Colors.red.shade50,
-                          side: BorderSide(color: Colors.red.shade300),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side:
+                          BorderSide(color: Colors.red.shade300),
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -1307,27 +1382,25 @@ Widget build(BuildContext context) {
     );
   }
 
-String _joinLabelFull(String type, BuildContext context) {
-  final l = AppLocalizations.of(context)!;
-
-  switch (type.toLowerCase()) {
-    case 'video':
-      return l.joinVideoCall;
-    case 'audio':
-    case 'phone':
-      return l.joinAudioCall;
-    case 'chat':
-    case 'message':
-      return l.startChat;
-    default:
-      return l.viewLocation;
+  String _joinLabelFull(String type, BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    switch (type.toLowerCase()) {
+      case 'video':
+        return l.joinVideoCall;
+      case 'audio':
+      case 'phone':
+        return l.joinAudioCall;
+      case 'chat':
+      case 'message':
+        return l.startChat;
+      default:
+        return l.viewLocation;
+    }
   }
 }
-  }
 
 String _consultDescription(String type, BuildContext context) {
   final l = AppLocalizations.of(context)!;
-
   switch (type.toLowerCase()) {
     case 'video':
       return l.videoConsultation;
@@ -1363,25 +1436,24 @@ class _SheetRow extends StatelessWidget {
             color: AppConstants.primaryColor.withOpacity(0.08),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 17, color: AppConstants.primaryColor),
+          child:
+          Icon(icon, size: 17, color: AppConstants.primaryColor),
         ),
         const SizedBox(width: 12),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-          ),
+              fontSize: 13,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500),
         ),
         const Spacer(),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
-          ),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A)),
         ),
       ],
     ),
@@ -1424,5 +1496,3 @@ class _Avatar extends StatelessWidget {
     );
   }
 }
-
-

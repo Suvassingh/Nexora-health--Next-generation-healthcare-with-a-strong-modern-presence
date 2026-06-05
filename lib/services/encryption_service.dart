@@ -1,12 +1,14 @@
+
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:patient_app/models/encrypted_message.dart';
 import 'package:pointycastle/export.dart';
 
 class EncryptionService {
-  //  RSA KEY GENERATION (2048-bit keys, secure random, OAEP padding for encryption)
+  //   RSA KEY GENERATION  
 
   static AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey> generateRSAKeyPair() {
     final secureRandom = FortunaRandom();
@@ -22,13 +24,14 @@ class EncryptionService {
       );
 
     final pair = keyGen.generateKeyPair();
+
     return AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(
       pair.publicKey as RSAPublicKey,
       pair.privateKey as RSAPrivateKey,
     );
   }
 
-
+  //   SERIALIZATION  
 
   static String publicKeyToPem(RSAPublicKey key) {
     final map = {
@@ -41,8 +44,8 @@ class EncryptionService {
   static RSAPublicKey parsePublicKeyFromPem(String pem) {
     final map = jsonDecode(utf8.decode(base64Decode(pem))) as Map;
     return RSAPublicKey(
-      BigInt.parse(map['n'] as String, radix: 16),
-      BigInt.parse(map['e'] as String, radix: 16),
+      BigInt.parse(map['n'], radix: 16),
+      BigInt.parse(map['e'], radix: 16),
     );
   }
 
@@ -60,14 +63,14 @@ class EncryptionService {
   static RSAPrivateKey parsePrivateKeyFromPem(String pem) {
     final map = jsonDecode(utf8.decode(base64Decode(pem))) as Map;
     return RSAPrivateKey(
-      BigInt.parse(map['n'] as String, radix: 16),
-      BigInt.parse(map['d'] as String, radix: 16),
-      BigInt.parse(map['p'] as String, radix: 16),
-      BigInt.parse(map['q'] as String, radix: 16),
+      BigInt.parse(map['n'], radix: 16),
+      BigInt.parse(map['d'], radix: 16),
+      BigInt.parse(map['p'], radix: 16),
+      BigInt.parse(map['q'], radix: 16),
     );
   }
 
-  //  RSA ENCRYPT / DECRYPT WITH OAEP PADDING (for encrypting small data like AES keys or sensitive fields)
+  //   RSA ENCRYPTION  
 
   static String encryptWithRSA(String plaintext, RSAPublicKey publicKey) {
     final encrypter = encrypt.Encrypter(
@@ -83,34 +86,73 @@ class EncryptionService {
     return encrypter.decrypt64(ciphertext);
   }
 
-  //  AES-GCM FOR SYMMETRIC ENCRYPTION (e.g. encrypting data before sending to server)
+  //   AES KEY  
 
-  static encrypt.Key generateAESKey() => encrypt.Key.fromSecureRandom(32);
+  static encrypt.Key generateAESKey() =>
+      encrypt.Key.fromSecureRandom(32);
 
-  static EncryptedMessage encryptWithAES(String plaintext, encrypt.Key key) {
+  //   AES STRING ENCRYPTION    
+
+  static EncryptedMessage encryptWithAES(
+      String plaintext,
+      encrypt.Key key,
+      ) {
+    final iv = encrypt.IV.fromSecureRandom(12);
+
+    final encrypter = encrypt.Encrypter(
+      encrypt.AES(key, mode: encrypt.AESMode.gcm),
+    );
+
+    final encrypted = encrypter.encrypt(plaintext, iv: iv);
+
+    return EncryptedMessage(
+      content: encrypted.base64,
+      iv: iv.base64,
+    );
+  }
+
+  static String decryptWithAES(
+      String ciphertext,
+      encrypt.Key key,
+      String ivBase64,
+      ) {
+    final iv = encrypt.IV.fromBase64(ivBase64);
+
+    final encrypter = encrypt.Encrypter(
+      encrypt.AES(key, mode: encrypt.AESMode.gcm),
+    );
+
+    return encrypter.decrypt64(ciphertext, iv: iv);
+  }
+
+
+  //   AES BYTE ENCRYPTION  
+
+  /// Encrypts raw bytes. Returns [12-byte IV | ciphertext].
+  static Future<Uint8List> encryptBytes(
+      Uint8List plainBytes, encrypt.Key key) async {
     final iv = encrypt.IV.fromSecureRandom(12);
     final encrypter = encrypt.Encrypter(
       encrypt.AES(key, mode: encrypt.AESMode.gcm),
     );
-    final encrypted = encrypter.encrypt(plaintext, iv: iv);
-    return EncryptedMessage(content: encrypted.base64, iv: iv.base64);
+    final encrypted = encrypter.encryptBytes(plainBytes, iv: iv);
+     return Uint8List.fromList([...iv.bytes, ...encrypted.bytes]);
   }
 
-  static String decryptWithAES(
-    String ciphertext,
-    encrypt.Key key,
-    String ivBase64,
-  ) {
-    final iv = encrypt.IV.fromBase64(ivBase64);
+  /// Decrypts bytes produced by [encryptBytes]. Expects [12-byte IV | ciphertext].
+  static Future<Uint8List> decryptBytes(
+      Uint8List combined, encrypt.Key key) async {
+    if (combined.length < 12) throw Exception('Invalid encrypted data: too short');
+    final ivBytes = combined.sublist(0, 12);
+    final ciphertext = combined.sublist(12);
     final encrypter = encrypt.Encrypter(
       encrypt.AES(key, mode: encrypt.AESMode.gcm),
     );
-    return encrypter.decrypt64(ciphertext, iv: iv);
+    final decrypted = encrypter.decryptBytes(
+      encrypt.Encrypted(ciphertext),
+      iv: encrypt.IV(ivBytes),
+    );
+    return Uint8List.fromList(decrypted);
   }
 }
 
-class EncryptedMessage {
-  final String content;
-  final String iv;
-  const EncryptedMessage({required this.content, required this.iv});
-}

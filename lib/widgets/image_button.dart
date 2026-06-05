@@ -4,7 +4,7 @@ import 'package:patient_app/app_constants.dart';
 class ImageButton extends StatelessWidget {
   final String text;
   final String imagePath;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const ImageButton({
     super.key,

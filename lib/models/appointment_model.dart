@@ -1,11 +1,6 @@
 
-
-
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-
 class Appt {
   final String id;
   final String doctorName;
@@ -16,7 +11,9 @@ class Appt {
   final String status;
   final String consultType; 
   final String? patientNotes;
-final String? doctorId; 
+final String? doctorId;
+  final String? doctorUserId;
+
 
   const Appt({
     required this.id,
@@ -29,6 +26,7 @@ final String? doctorId;
     required this.consultType,
     this.patientNotes,
     this.doctorId,
+    this.doctorUserId,        
   });
 
   factory Appt.fromApi(Map<String, dynamic> row) {
@@ -65,8 +63,8 @@ final String? doctorId;
       consultType: consultType,
       patientNotes:
           row['patient_notes']?.toString() ?? row['notes']?.toString(),
-doctorId:
-          row['doctor_user_id']?.toString() ?? row['doctor_id']?.toString(),
+      doctorId: row['doctor_id']?.toString(),
+      doctorUserId: row['doctor_user_id']?.toString(),      
     );
   }
 
@@ -77,7 +75,7 @@ doctorId:
       if (v != null && v.isNotEmpty && v != 'null') return v;
     }
 
-    // 2. Nested doctor object  → profile sub-object
+    // 2. Nested doctor object  profile sub-object
     final doctor = row['doctor'];
     if (doctor is Map<String, dynamic>) {
       final profile = doctor['profile'];

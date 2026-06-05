@@ -13,7 +13,6 @@ import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/widgets/appointment_data.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
 import 'package:patient_app/widgets/simmer.dart';
-import 'package:patient_app/widgets/voice_fab.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/appointment_screen.dart';
@@ -29,7 +28,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  // ignore: unused_field
   final _supa = Supabase.instance.client;
   String _cancellingId = '';
 
@@ -99,7 +97,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         borderRadius: 10,
         duration: const Duration(seconds: 3),
       );
-      // _loadAll();
       ref.invalidate(homeDataProvider);
     } catch (e) {
       Get.snackbar(
@@ -116,7 +113,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  // ignore: unused_element
   AppointmentData? _parseAppointment(
     Map<String, dynamic> m,
     Map<String, dynamic> doctorData,
@@ -152,22 +148,22 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: _buildAppBar(),
-      floatingActionButton: homeAsync.whenOrNull(
-      data: (data) {
-        final firstName = _getFirstName(data.profile);
-        final next = data.nextAppointment;
-        final voiceText = next != null
-            ? '${_greeting(context)} $firstName. '
-              'तपाईंको अर्को अपोइन्टमेन्ट डा. ${next.doctorName} सँग '
-              '${next.formattedDate} मा छ। '
-              'तपाईंका जम्मा ${data.stats.total} परामर्श छन्, '
-              '${data.stats.pending} आउँदो छ।'
-            : '${_greeting(context)} $firstName. '
-              'आज कुनै आउँदो अपोइन्टमेन्ट छैन। '
-              'तपाईंका जम्मा ${data.stats.total} परामर्श छन्।';
-        return VoiceFab(text: voiceText);
-      },
-    ),
+      //   floatingActionButton: homeAsync.whenOrNull(
+      //   data: (data) {
+      //     final firstName = _getFirstName(data.profile);
+      //     final next = data.nextAppointment;
+      //     final voiceText = next != null
+      //         ? '${_greeting(context)} $firstName. '
+      //           'तपाईंको अर्को अपोइन्टमेन्ट डा. ${next.doctorName} सँग '
+      //           '${next.formattedDate} मा छ। '
+      //           'तपाईंका जम्मा ${data.stats.total} परामर्श छन्, '
+      //           '${data.stats.pending} आउँदो छ।'
+      //         : '${_greeting(context)} $firstName. '
+      //           'आज कुनै आउँदो अपोइन्टमेन्ट छैन। '
+      //           'तपाईंका जम्मा ${data.stats.total} परामर्श छन्।';
+      //     return VoiceFab(text: voiceText);
+      //   },
+      // ),
       body: homeAsync.when(
         loading: () => _buildShimmer(),
         error: (e, _) =>
@@ -300,7 +296,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     ],
   );
   String _getFirstName(PatientProfile profile) {
-    // ignore: dead_code
     final name = profile.fullName ?? '';
     return name.split(' ').first;
   }

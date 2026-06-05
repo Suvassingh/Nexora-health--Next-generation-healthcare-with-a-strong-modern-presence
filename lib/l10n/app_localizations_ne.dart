@@ -110,7 +110,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get cancelConfirmBtn => 'रद्द गर्नुहोस्';
 
   @override
-  String get cancel => 'रद्द';
+  String get cancel => 'रद्द गर्नुहोस्';
 
   @override
   String get cancelBtn => 'रद्द गर्नुहोस्';
@@ -220,7 +220,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get error => 'त्रुटि';
 
   @override
-  String get success => 'सफल';
+  String get success => 'सफलता';
 
   @override
   String get appointmentBooked => 'अपॉइन्टमेन्ट बुक भयो!';
@@ -456,7 +456,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get passwordChangedSuccess => 'पासवर्ड सफलतापूर्वक परिवर्तन भयो';
 
   @override
-  String get somethingWentWrong => 'केही गलत भयो';
+  String get somethingWentWrong => 'केही गडबड भयो। कृपया पुन: प्रयास गर्नुहोस्।';
 
   @override
   String get passwordSecurityInfo => 'सुरक्षाको लागि, पहिले आफ्नो हालको पासवर्ड प्रविष्ट गर्नुहोस्। नयाँ पासवर्ड कम्तीमा ८ अक्षरको हुनुपर्छ।';
@@ -546,7 +546,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get loginFailed => 'लगइन असफल';
 
   @override
-  String get loggingIn => 'लगइन हुँदै...';
+  String get loggingIn => 'लगइन हुँदैछ…';
 
   @override
   String get personalInfo => 'व्यक्तिगत जानकारी';
@@ -555,13 +555,13 @@ class AppLocalizationsNe extends AppLocalizations {
   String get accountInfo => 'खाता जानकारी';
 
   @override
-  String get orSignupWith => 'वा यसद्वारा साइन अप गर्नुहोस्';
+  String get orSignupWith => 'वा यसरी साइन अप गर्नुहोस्';
 
   @override
   String get google => 'गुगल';
 
   @override
-  String get creatingAccount => 'खाता बनाउँदै...';
+  String get creatingAccount => 'खाता बनाउँदैछ…';
 
   @override
   String get nameRequired => 'नाम आवश्यक छ';
@@ -588,7 +588,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get accountCreated => 'खाता सफलतापूर्वक बनाइयो!';
 
   @override
-  String get accountSetupComplete => 'खाता सेटअप पूरा भयो!';
+  String get accountSetupComplete => 'खाता सेटअप पूरा भयो। कृपया लगइन गर्नुहोस्।';
 
   @override
   String get emailAlreadyRegistered => 'यो ईमेल पहिले नै दर्ता छ। कृपया लगइन गर्नुहोस्।';
@@ -597,7 +597,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get incompleteProfile => 'प्रोफाइल अपूर्ण';
 
   @override
-  String get completeProfileHint => 'कृपया सेटिङमा गएर आफ्नो प्रोफाइल पूरा गर्नुहोस्।';
+  String get completeProfileHint => 'कृपया आफ्नो प्रोफाइल जानकारी पूरा गर्नुहोस्।';
 
   @override
   String get googleSignInFailed => 'गुगल साइन-इन असफल';
@@ -896,4 +896,52 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get days => 'दिन';
+
+  @override
+  String get invalidEmail => 'कृपया मान्य इमेल ठेगाना प्रविष्ट गर्नुहोस्।';
+
+  @override
+  String get phoneInvalid => 'फोन नम्बर १० अंकको हुनुपर्छ।';
+
+  @override
+  String get ageMinimum18 => 'तपाईंको उमेर कम्तीमा १८ वर्ष हुनुपर्छ।';
+
+  @override
+  String get noInternetConnection => 'इन्टरनेट जडान छैन। कृपया पुन: प्रयास गर्नुहोस्।';
+
+  @override
+  String get verifyEmailTitle => 'इमेल प्रमाणित गर्नुहोस्';
+
+  @override
+  String get verifyEmailMessage => 'खाता सिर्जना भयो। लगइन गर्नुअघि कृपया आफ्नो इमेल प्रमाणित गर्नुहोस्।';
+
+  @override
+  String get emailNotVerifiedTitle => 'इमेल प्रमाणित भएन';
+
+  @override
+  String get emailNotVerifiedMessage => 'लगइन गर्नुअघि कृपया आफ्नो इमेल प्रमाणित गर्नुहोस्।';
+
+  @override
+  String get resetPassword => 'पासवर्ड रिसेट गर्नुहोस्';
+
+  @override
+  String get send => 'पठाउनुहोस्';
+
+  @override
+  String get passwordResetSent => 'पासवर्ड रिसेट लिङ्क तपाईंको इमेलमा पठाइयो।';
+
+  @override
+  String get invalidCredentials => 'अमान्य इमेल वा पासवर्ड।';
+
+  @override
+  String get emailNotVerified => 'इमेल प्रमाणित भएन। कृपया आफ्नो इनबक्स जाँच गर्नुहोस्।';
+
+  @override
+  String get enterEmailForReset => 'enterEmailForReset';
+
+  @override
+  String get forgotPassword => 'forgotPassword';
+
+  @override
+  String get orSignInWith => 'Or SignIn With';
 }
