@@ -5,6 +5,7 @@ import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/livekit_call_screen.dart';
 import 'package:patient_app/provider/appointment_provider.dart';
 import 'package:patient_app/provider/home_provider.dart';
+import 'package:patient_app/services/appointment_reminder_service.dart';
 import 'package:patient_app/services/encryption_service.dart';
 import 'package:patient_app/services/user_key_service.dart';
 import 'package:patient_app/widgets/simmer.dart';
@@ -126,6 +127,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     setState(() => _cancelling = true);
     try {
       await ApiService.cancelAppointment(appt.id);
+          await AppointmentReminderService.rescheduleAllReminders(); 
+
       Get.snackbar(
         AppLocalizations.of(context)!.cancelled,
         AppLocalizations.of(context)!.appointmentCancelledSuccess,
@@ -223,6 +226,11 @@ Future<void> _autoCompletePastAppointments(List<Appt> allAppointments) async {
       try {
         await ApiService.completeAppointment(appt.id);
         debugPrint('Auto‑completed appointment ${appt.id} (day passed)');
+         if (!mounted) return; // ✅ valid here
+        await AppointmentReminderService.rescheduleAllReminders();
+        if (!mounted) return;
+        ref.read(appointmentsProvider);
+
       } catch (e) {
         debugPrint('Auto‑complete failed for ${appt.id}: $e');
       }

@@ -8,6 +8,7 @@ import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/doctor_model.dart';
 import 'package:patient_app/nepal_location.dart';
 import 'package:patient_app/services/api_service.dart';
+import 'package:patient_app/services/appointment_reminder_service.dart';
 import 'package:patient_app/widgets/appointment_screen_widgets.dart/step4_confirm_appointment.dart';
 import 'package:patient_app/widgets/image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -158,6 +159,11 @@ Future<void> _fetchDoctors() async {
   }
 
   Future<void> _book() async {
+     final doctorId = _doctor!.doctorTableId;
+    if (doctorId is! int || doctorId.toString().contains('-')) {
+      _snack('Invalid doctor selected. Please try again.', err: true);
+      return;
+    }
     if (_supa.auth.currentUser == null) {
      _snack(AppLocalizations.of(context)!.pleaseLoginFirst, err: true);
       return;
@@ -180,6 +186,8 @@ Future<void> _fetchDoctors() async {
             ? null
             : _sympCtrl.text.trim(),
       );
+          await AppointmentReminderService.rescheduleAllReminders();
+
       setState(() => _booking = false);
       if (mounted) {
         await _showSuccess();

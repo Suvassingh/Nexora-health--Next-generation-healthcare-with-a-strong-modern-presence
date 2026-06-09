@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/services/encryption_service.dart';
+import 'package:patient_app/services/key_manager_service.dart';
 import 'package:patient_app/services/media_download_service.dart';
 import 'package:patient_app/services/presence_service.dart';
 import 'package:patient_app/widgets/media_preview_dilog.dart';
@@ -146,19 +147,35 @@ Future<void> _initializeChat() async {
     );
   }
   //  Key management 
+  // Future<void> _ensureUserKeyPair() async {
+  //   final profile = await _supabase
+  //       .from('user_profiles')
+  //       .select('public_key')
+  //       .eq('id', _currentUserId)
+  //       .maybeSingle();
+  //   final stored = await _secureStorage.read(
+  //     key: 'private_key_$_currentUserId',
+  //   );
+  //   if (stored == null || profile == null || profile['public_key'] == null) {
+  //     await _generateAndSaveKeyPair();
+  //   } else {
+  //     _currentUserPrivateKeyPem = stored;
+  //   }
+  // }
+
   Future<void> _ensureUserKeyPair() async {
-    final profile = await _supabase
-        .from('user_profiles')
-        .select('public_key')
-        .eq('id', _currentUserId)
-        .maybeSingle();
-    final stored = await _secureStorage.read(
-      key: 'rsa_private_key_$_currentUserId',
+    // KeyManagerService already ran at login; just retrieve what it stored.
+    final privKey = await KeyManagerService.getPrivateKey();
+    if (privKey == null) {
+      // Fallback: re-run full key setup (cold install, cleared storage, etc.)
+      await KeyManagerService.ensureKeyPair();
+    }
+    // Read PEM from the canonical key name
+    _currentUserPrivateKeyPem = await _secureStorage.read(
+      key: 'private_key_$_currentUserId',
     );
-    if (stored == null || profile == null || profile['public_key'] == null) {
-      await _generateAndSaveKeyPair();
-    } else {
-      _currentUserPrivateKeyPem = stored;
+    if (_currentUserPrivateKeyPem == null) {
+      throw Exception('Encryption key unavailable. Please restart the app.');
     }
   }
   Future<void> _generateAndSaveKeyPair() async {
@@ -166,7 +183,7 @@ Future<void> _initializeChat() async {
     final pub = EncryptionService.publicKeyToPem(kp.publicKey);
     final priv = EncryptionService.privateKeyToPem(kp.privateKey);
     await _secureStorage.write(
-      key: 'rsa_private_key_$_currentUserId',
+      key: 'private_key_$_currentUserId',
       value: priv,
     );
     await _supabase
@@ -175,34 +192,52 @@ Future<void> _initializeChat() async {
         .eq('id', _currentUserId);
     _currentUserPrivateKeyPem = priv;
   }
-
-Future<void> _fetchAndDecryptAESKey() async {
+  Future<void> _fetchAndDecryptAESKey() async {
     if (_conversationId == null || _conversationId!.isEmpty) {
-      throw Exception('Conversation ID is missing');
-    }
-    if (_currentUserPrivateKeyPem == null) {
-      throw Exception(
-        'Your encryption key is missing. Please restart the app.',
-      );
+      throw Exception('No conversation ID available');
     }
 
     final conv = await _supabase
         .from('conversations')
-        .select('aes_key_encrypted_for_patient')
+        .select('aes_key')
         .eq('id', _conversationId!)
         .maybeSingle();
 
-    String? encKey = conv?['aes_key_encrypted_for_patient'] as String?;
-    if (encKey == null) {
-      throw Exception('AES key not found for this conversation.');
+    final aesB64 = conv?['aes_key'] as String?;
+    if (aesB64 == null) {
+      throw Exception('AES key not found. Please start a new conversation.');
     }
 
-    final privKey = EncryptionService.parsePrivateKeyFromPem(
-      _currentUserPrivateKeyPem!,
-    );
-    final aesB64 = EncryptionService.decryptWithRSA(encKey, privKey);
     _aesKey = encrypt.Key.fromBase64(aesB64);
   }
+//
+// Future<void> _fetchAndDecryptAESKey() async {
+//     if (_conversationId == null || _conversationId!.isEmpty) {
+//       throw Exception('Conversation ID is missing');
+//     }
+//     if (_currentUserPrivateKeyPem == null) {
+//       throw Exception(
+//         'Your encryption key is missing. Please restart the app.',
+//       );
+//     }
+//
+//     final conv = await _supabase
+//         .from('conversations')
+//         .select('aes_key_encrypted_for_patient')
+//         .eq('id', _conversationId!)
+//         .maybeSingle();
+//
+//     String? encKey = conv?['aes_key_encrypted_for_patient'] as String?;
+//     if (encKey == null) {
+//       throw Exception('AES key not found for this conversation.');
+//     }
+//
+//     final privKey = EncryptionService.parsePrivateKeyFromPem(
+//       _currentUserPrivateKeyPem!,
+//     );
+//     final aesB64 = EncryptionService.decryptWithRSA(encKey, privKey);
+//     _aesKey = encrypt.Key.fromBase64(aesB64);
+//   }
 bool _isValidBase64(String str) {
     try {
       base64Decode(str);

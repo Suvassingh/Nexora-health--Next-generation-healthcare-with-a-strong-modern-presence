@@ -12,6 +12,8 @@ import 'package:patient_app/app_constants.dart';
 import 'package:patient_app/controller/internet_status_controller.dart';
 import 'package:patient_app/home_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
+import 'package:patient_app/services/appointment_reminder_service.dart';
+import 'package:patient_app/services/key_manager_service.dart';
 import 'package:patient_app/signup_screen.dart';
 import 'package:patient_app/widgets/connectivity_icon.dart';
 import 'package:patient_app/widgets/image_button.dart';
@@ -80,6 +82,9 @@ class LoginController extends GetxController {
         return;
       }
       await FcmService.onUserLogin();
+      await AppointmentReminderService.rescheduleAllReminders();
+      await KeyManagerService.ensureKeyPair();
+
       Get.offAll(() => HomeScreen());
     } on AuthException catch (e) {
       Get.snackbar(l.loginFailed, _mapAuthError(e.message, l));
@@ -180,6 +185,7 @@ class LoginController extends GetxController {
           backgroundColor: Colors.orange.shade100,
         );
       }
+      await AppointmentReminderService.rescheduleAllReminders();
 
       Get.offAll(() => HomeScreen());
     } catch (e) {
@@ -340,18 +346,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           onSubmitted: () => _controller.login(context),
                         ),
                         const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () => _controller.resetPassword(context),
-                            child: Text(
-                              loc.forgotPassword,
-                              style: const TextStyle(
-                                color: AppConstants.secondaryColor,
-                              ),
-                            ),
-                          ),
-                        ),
+                        // Align(
+                        //   alignment: Alignment.centerRight,
+                        //   child: TextButton(
+                        //     onPressed: () => _controller.resetPassword(context),
+                        //     child: Text(
+                        //       loc.forgotPassword,
+                        //       style: const TextStyle(
+                        //         color: AppConstants.secondaryColor,
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),

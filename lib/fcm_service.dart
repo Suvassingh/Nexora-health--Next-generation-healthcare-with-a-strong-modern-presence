@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:patient_app/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FcmService {
@@ -34,6 +35,10 @@ class FcmService {
     // Listen for token refreshes
     _messaging.onTokenRefresh.listen((newToken) {
       _sendCurrentToken(token: newToken);
+          FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
+
     });
 
     // Listen to foreground messages
@@ -43,6 +48,33 @@ class FcmService {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
+  @pragma('vm:entry-point')
+  static Future<void> _firebaseMessagingBackgroundHandler(
+    RemoteMessage message,
+  ) async {
+    await Firebase.initializeApp();
+    final data = message.data;
+    if (data['type'] == 'missed_call') {
+      // Show local notification even when app is terminated
+      await _showMissedCallNotification(data);
+    }
+  }
+
+
+  static Future<void> _showMissedCallNotification(
+    Map<String, dynamic> data,
+  ) async {
+    final callerName = data['callerName'] ?? 'Unknown';
+    final callId =
+        data['callId'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+    await NotificationService.instance.showLocalNotification(
+      id: callId.hashCode,
+      title: 'Missed Call',
+      body: 'Missed call from $callerName',
+      payload: {'type': 'missed_call', 'callId': callId},
+    );
+  }
   /// Call after EVERY successful login (email/password, Google, etc.)
   static Future<void> onUserLogin() async {
     await _sendCurrentToken();
@@ -105,34 +137,5 @@ class FcmService {
       await _localNotif.initialize(settings);
       await _showMissedCallNotification(data);
     }
-  }
-
-  static Future<void> _showMissedCallNotification(
-    Map<String, dynamic> data,
-  ) async {
-    final callerName = data['callerName'] ?? 'Unknown';
-    final callId =
-        data['callId'] ?? DateTime.now().millisecondsSinceEpoch.toString();
-
-    const androidDetails = AndroidNotificationDetails(
-      'missed_calls',
-      'Missed Calls',
-      channelDescription: 'Notifications for missed calls',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _localNotif.show(
-      callId.hashCode,
-      'Missed Call',
-      'Missed call from $callerName',
-      details,
-      payload: jsonEncode({'type': 'missed_call', 'callId': callId}),
-    );
   }
 }

@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/appointment_confirm_screen.dart';
+import 'package:patient_app/call_history_screen.dart';
 import 'package:patient_app/l10n/app_localizations.dart';
 import 'package:patient_app/models/notification_model.dart';
 import 'package:patient_app/models/patients_model.dart';
 import 'package:patient_app/notification_screen.dart';
 import 'package:patient_app/provider/notification_provider.dart';
+import 'package:patient_app/services/appointment_reminder_service.dart';
 import 'package:patient_app/services/notification_service.dart';
 import 'package:patient_app/widgets/appointment_data.dart';
 import 'package:patient_app/widgets/language_toggle_button.dart';
@@ -30,6 +32,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final _supa = Supabase.instance.client;
   String _cancellingId = '';
+  bool _remindersScheduled = false; 
 
   StreamSubscription<AppNotification>? _notifSub;
   @override
@@ -165,13 +168,24 @@ class _HomePageState extends ConsumerState<HomePage> {
       //   },
       // ),
       body: homeAsync.when(
+         data: (data) {
+          // Schedule reminders only once (runs when data first loads)
+          if (!_remindersScheduled) {
+            _remindersScheduled = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              AppointmentReminderService.rescheduleAllReminders();
+            });
+          }
+          // Wrap the content with RefreshIndicator
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(homeDataProvider),
+            child: _buildHomeContent(data),
+          );
+        },
         loading: () => _buildShimmer(),
         error: (e, _) =>
             _buildError(e.toString(), () => ref.invalidate(homeDataProvider)),
-        data: (data) => RefreshIndicator(
-          onRefresh: () async => ref.invalidate(homeDataProvider),
-          child: _buildHomeContent(data),
-        ),
+      
       ),
     );
   }
@@ -283,6 +297,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                     ),
+                    // Inside DoctorHomeScreen's appBar actions or drawer
+                  
                 ],
               ),
             );
@@ -293,6 +309,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       const LanguageToggleButton(),
       const SizedBox(width: 8),
+      IconButton(
+        icon: const Icon(Icons.history),
+        onPressed: () => Get.to(() => const CallHistoryScreen()),
+      )
     ],
   );
   String _getFirstName(PatientProfile profile) {

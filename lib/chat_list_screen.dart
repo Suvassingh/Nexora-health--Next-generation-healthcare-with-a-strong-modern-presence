@@ -44,12 +44,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     ).subscribe();
   }
   Future<String> _createConversation(
-    String patientId,
-    String doctorId,
-  ) async {
+      String patientId,
+      String doctorId,
+      ) async {
     final supabase = Supabase.instance.client;
 
-    // Check if conversation already exists
+    // Check if already exists
     final existing = await supabase
         .from('conversations')
         .select('id')
@@ -59,57 +59,89 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
     if (existing != null) return existing['id'] as String;
 
-    // Fetch public keys 
-    final rows = await supabase
-        .from('user_profiles')
-        .select('id, public_key')
-        .inFilter('id', [patientId, doctorId]);
-
-    final Map<String, String?> rawKeys = {
-      for (final r in rows) r['id'] as String: r['public_key'] as String?,
-    };
-
-    final patientKey = rawKeys[patientId];
-    final doctorKey = rawKeys[doctorId];
-
-    if (patientKey == null) {
-      throw Exception(
-        'Patient has not set up encryption yet. Please ask them to open the app once.',
-      );
-    }
-    if (doctorKey == null) {
-      throw Exception(
-        'Doctor has not set up encryption yet. Please ask them to open the app once.',
-      );
-    }
-
-    // Generate AES key and encrypt for both parties
+    // Generate plain AES key — stored server-side, protected by RLS
     final aesKey = EncryptionService.generateAESKey();
     final aesB64 = aesKey.base64;
 
-    final encForPatient = EncryptionService.encryptWithRSA(
-      aesB64,
-      EncryptionService.parsePublicKeyFromPem(patientKey),
-    );
-    final encForDoctor = EncryptionService.encryptWithRSA(
-      aesB64,
-      EncryptionService.parsePublicKeyFromPem(doctorKey),
-    );
-
-    // Insert conversation
     final response = await supabase
         .from('conversations')
         .insert({
-          'patient_id': patientId,
-          'doctor_id': doctorId,
-          'aes_key_encrypted_for_patient': encForPatient,
-          'aes_key_encrypted_for_doctor': encForDoctor,
-        })
+      'patient_id': patientId,
+      'doctor_id': doctorId,
+      'aes_key': aesB64,
+    })
         .select('id')
         .single();
 
     return response['id'] as String;
   }
+  // Future<String> _createConversation(
+  //   String patientId,
+  //   String doctorId,
+  // ) async {
+  //   final supabase = Supabase.instance.client;
+  //
+  //   // Check if conversation already exists
+  //   final existing = await supabase
+  //       .from('conversations')
+  //       .select('id')
+  //       .eq('patient_id', patientId)
+  //       .eq('doctor_id', doctorId)
+  //       .maybeSingle();
+  //
+  //   if (existing != null) return existing['id'] as String;
+  //
+  //   // Fetch public keys
+  //   final rows = await supabase
+  //       .from('user_profiles')
+  //       .select('id, public_key')
+  //       .inFilter('id', [patientId, doctorId]);
+  //
+  //   final Map<String, String?> rawKeys = {
+  //     for (final r in rows) r['id'] as String: r['public_key'] as String?,
+  //   };
+  //
+  //   final patientKey = rawKeys[patientId];
+  //   final doctorKey = rawKeys[doctorId];
+  //
+  //   if (patientKey == null) {
+  //     throw Exception(
+  //       'Patient has not set up encryption yet. Please ask them to open the app once.',
+  //     );
+  //   }
+  //   if (doctorKey == null) {
+  //     throw Exception(
+  //       'Doctor has not set up encryption yet. Please ask them to open the app once.',
+  //     );
+  //   }
+  //
+  //   // Generate AES key and encrypt for both parties
+  //   final aesKey = EncryptionService.generateAESKey();
+  //   final aesB64 = aesKey.base64;
+  //
+  //   final encForPatient = EncryptionService.encryptWithRSA(
+  //     aesB64,
+  //     EncryptionService.parsePublicKeyFromPem(patientKey),
+  //   );
+  //   final encForDoctor = EncryptionService.encryptWithRSA(
+  //     aesB64,
+  //     EncryptionService.parsePublicKeyFromPem(doctorKey),
+  //   );
+  //
+  //   // Insert conversation
+  //   final response = await supabase
+  //       .from('conversations')
+  //       .insert({
+  //         'patient_id': patientId,
+  //         'doctor_id': doctorId,
+  //         'aes_key_encrypted_for_patient': encForPatient,
+  //         'aes_key_encrypted_for_doctor': encForDoctor,
+  //       })
+  //       .select('id')
+  //       .single();
+  //
+  //   return response['id'] as String;
+  // }
   void _showCantMessageDialog(BuildContext context, String doctorName) {
     showDialog(
       context: context,

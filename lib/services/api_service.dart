@@ -433,7 +433,28 @@ static Dio get supabaseFunctionsDio {
       throw _handleError(e);
     }
   }
+static Future<List<Map<String, dynamic>>> getCallHistory() async {
+    final res = await dio.get('/calls/history');
+    final calls = List<Map<String, dynamic>>.from(res.data);
+    final supabase = Supabase.instance.client;
 
+    // Enrich each call with the other party's name
+    final enriched = await Future.wait(
+      calls.map((call) async {
+        final isCaller = call['caller_id'] == supabase.auth.currentUser?.id;
+        final otherId = isCaller ? call['callee_id'] : call['caller_id'];
+        final profile = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('id', otherId)
+            .maybeSingle();
+        call['caller_name'] = profile?['full_name'] ?? 'Unknown';
+        call['callee_name'] = call['caller_name']; // reuse for simplicity
+        return call;
+      }),
+    );
+    return enriched;
+  }
   static Future<void> completeAppointment(String appointmentId) async {
     final supabase = Supabase.instance.client;
     await supabase

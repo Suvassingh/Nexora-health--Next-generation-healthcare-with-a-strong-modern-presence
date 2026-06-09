@@ -17,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
+
   final supabase = Supabase.instance.client;
   final ConnectivityController controller = Get.put(ConnectivityController(),permanent: true);
 

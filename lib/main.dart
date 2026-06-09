@@ -11,6 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:patient_app/livekit_call_screen.dart';
+import 'package:patient_app/services/appointment_reminder_service.dart';
 import 'package:patient_app/services/presence_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -99,7 +100,7 @@ void main() async {
   // Local notifications
   await NotificationService.instance.initialize();
   await FcmService.initialize();
-
+await AppointmentReminderService.init();
   // FOREGROUND CALL LISTENER
   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
     final data = message.data;
