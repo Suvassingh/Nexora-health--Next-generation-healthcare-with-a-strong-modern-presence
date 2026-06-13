@@ -259,6 +259,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       ],
     ),
     actions: [
+
+      const SizedBox(width: 4),
+      IconButton(
+        icon: const Icon(Icons.call,color: Colors.white,),
+        onPressed: () => Get.to(() => const CallHistoryScreen()),
+      ),
+      const SizedBox(width: 8),
+
+      const LanguageToggleButton(),
+      const SizedBox(width: 8),
+
       Padding(
         padding: const EdgeInsets.only(right: 12),
         child: Consumer(
@@ -297,22 +308,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                     ),
-                    // Inside DoctorHomeScreen's appBar actions or drawer
-                  
+                  // Inside DoctorHomeScreen's appBar actions or drawer
+
                 ],
               ),
             );
           },
         ),
       ),
-      const SizedBox(width: 4),
+      const SizedBox(width: 16),
 
-      const LanguageToggleButton(),
-      const SizedBox(width: 8),
-      IconButton(
-        icon: const Icon(Icons.history),
-        onPressed: () => Get.to(() => const CallHistoryScreen()),
-      )
     ],
   );
   String _getFirstName(PatientProfile profile) {
