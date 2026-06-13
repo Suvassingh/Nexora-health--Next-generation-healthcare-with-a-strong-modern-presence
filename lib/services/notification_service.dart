@@ -36,6 +36,7 @@ class NotificationService {
 
   //  Public init 
   Future<void> initialize() async {
+
     // 1. Request permission
     await _messaging.requestPermission(
       alert: true,
@@ -60,8 +61,36 @@ class NotificationService {
     if (initial != null) _handleNotificationTap(initial);
 
     // 7. Save token & listen for refresh
-    await _saveToken();
+    // await _saveToken();
+    // _messaging.onTokenRefresh.listen(_uploadToken);
+    try {
+      await _saveToken();
+    } catch (e) {
+      print(' FCM token not available: $e');
+      // app will work without push notifications
+    }
+
     _messaging.onTokenRefresh.listen(_uploadToken);
+  }
+
+  Future<void> _saveToken() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    String? token;
+    try {
+      token = await _messaging.getToken();
+    } catch (e) {
+      print(' getToken failed: $e');
+      return;
+    }
+    if (token == null) return;
+
+    try {
+      await _uploadToken(token);
+    } catch (e) {
+      print(' Upload token failed: $e');
+    }
   }
 
   // Call this after user logs in
@@ -133,14 +162,14 @@ class NotificationService {
     );
   }
 
-  //  FCM token management 
-  Future<void> _saveToken() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) return;
-    final token = await _messaging.getToken();
-    if (token == null) return;
-    await _uploadToken(token);
-  }
+  // //  FCM token management
+  // Future<void> _saveToken() async {
+  //   final userId = _supabase.auth.currentUser?.id;
+  //   if (userId == null) return;
+  //   final token = await _messaging.getToken();
+  //   if (token == null) return;
+  //   await _uploadToken(token);
+  // }
 
   Future<void> _uploadToken(String token) async {
     final userId = _supabase.auth.currentUser?.id;
